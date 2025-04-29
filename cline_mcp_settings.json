@@ -1,0 +1,20 @@
+{
+  "mcpServers": {
+    "fidora": {
+      "command": "docker",
+      "args": [
+        "run",
+        "--name",
+        "fidora",
+        "--rm",
+        "-i",
+        "fidora-app"
+      ],
+      "disabled": false,
+      "autoApprove": [
+        "rolePrompt",
+        "sequentialThinking"
+      ]
+    }
+  }
+}
