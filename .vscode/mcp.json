@@ -1,0 +1,13 @@
+{
+  "servers": {
+    "fidora": {
+      "command": "docker",
+      "args": [
+        "run",
+        "--rm",
+        "-i",
+        "mcp/fidora"
+      ]
+    }
+  }
+}

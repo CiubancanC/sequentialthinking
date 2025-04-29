@@ -14,11 +14,11 @@ import { RolePromptFormatter } from "../../presentation/formatters/rolePromptFor
  * @returns The configured server.
  */
 export function createServer(): McpServer {
-  console.error("CEO MCP Server: Creating server instance");
+  console.error("Fidora Server: Creating server instance");
   try {
     // Create the server with metadata
     const server = new McpServer({
-      name: "ceomcp-server",
+      name: "fidora-server",
       version: "1.0.0",
     });
 
@@ -107,19 +107,19 @@ export function createServer(): McpServer {
  * Initializes and runs the MCP server using standard I/O transport.
  */
 export async function runServer(): Promise<void> {
-  console.error("CEO MCP Server: Starting runServer function");
+  console.error("Fidora Server: Starting runServer function");
 
   try {
-    console.error("CEO MCP Server: Creating server instance");
+    console.error("Fidora Server: Creating server instance");
     const server = createServer();
 
-    console.error("CEO MCP Server: Creating transport");
+    console.error("Fidora Server: Creating transport");
     const transport = new StdioServerTransport();
 
     try {
-      console.error("CEO MCP Server: Connecting to transport");
+      console.error("Fidora Server: Connecting to transport");
       await server.connect(transport);
-      console.error("CEO MCP Server running on stdio");
+      console.error("Fidora Server running on stdio");
       console.error("Available tools: rolePrompt");
 
       // Keep the process alive indefinitely
@@ -132,7 +132,7 @@ export async function runServer(): Promise<void> {
       console.error("Error details:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
       throw error;
     } finally {
-      console.error("CEO MCP Server: runServer function potentially finishing");
+      console.error("Fidora Server: runServer function potentially finishing");
     }
   } catch (error) {
     console.error("Fatal error in runServer:", error);

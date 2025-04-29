@@ -3,11 +3,11 @@
 import { runServer } from './server.js';
 
 /**
- * Entry point for the CEO MCP server.
+ * Entry point for the Fidora server.
  * Starts the server and handles any fatal errors.
  */
 export function main(): void {
-  console.error("CEO MCP Server: Starting main function in server/index.ts");
+  console.error("Fidora Server: Starting main function in server/index.ts");
   try {
     runServer().catch((error) => {
       console.error("Fatal error running server:", error);

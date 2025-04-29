@@ -10,7 +10,7 @@ export const config = {
     /**
      * The name of the server.
      */
-    name: "hello-world-server",
+    name: "fidora-server",
 
     /**
      * The version of the server.
