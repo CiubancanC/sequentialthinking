@@ -9,7 +9,8 @@ export class RoleResponse {
     private readonly _context: string,
     private readonly _analysis: string,
     private readonly _recommendations: string[],
-    private readonly _nextSteps: string[]
+    private readonly _nextSteps: string[],
+    private readonly _codeExamples: string[] = []
   ) {}
 
   /**
@@ -20,6 +21,7 @@ export class RoleResponse {
    * @param analysis The detailed analysis provided by the role
    * @param recommendations Key recommendations from the role
    * @param nextSteps Suggested next steps to take
+   * @param codeExamples Code examples provided by the role
    * @returns A new RoleResponse instance
    */
   public static create(
@@ -28,7 +30,8 @@ export class RoleResponse {
     context: string,
     analysis: string,
     recommendations: string[],
-    nextSteps: string[]
+    nextSteps: string[] = [],
+    codeExamples: string[] = []
   ): RoleResponse {
     if (!roleId || !roleName || !context || !analysis) {
       throw new Error("RoleResponse must have a roleId, roleName, context, and analysis");
@@ -44,7 +47,8 @@ export class RoleResponse {
       context,
       analysis,
       recommendations,
-      nextSteps || []
+      nextSteps,
+      codeExamples
     );
   }
 
@@ -59,7 +63,8 @@ export class RoleResponse {
       context: this._context,
       analysis: this._analysis,
       recommendations: this._recommendations,
-      nextSteps: this._nextSteps
+      nextSteps: this._nextSteps,
+      codeExamples: this._codeExamples
     };
   }
 
@@ -86,5 +91,9 @@ export class RoleResponse {
 
   public get nextSteps(): string[] {
     return [...this._nextSteps];
+  }
+
+  public get codeExamples(): string[] {
+    return [...this._codeExamples];
   }
 }

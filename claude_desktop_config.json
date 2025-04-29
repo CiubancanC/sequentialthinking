@@ -4,9 +4,15 @@
       "command": "docker",
       "args": [
         "run",
+        "--name",
+        "fidora",
         "--rm",
         "-i",
         "fidora-app"
+      ],
+      "autoApprove": [
+        "rolePrompt",
+        "sequentialThinking"
       ]
     }
   }

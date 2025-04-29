@@ -3,9 +3,12 @@
     "fidora": {
       "command": "docker",
       "args": [
-        "start",
+        "run",
+        "--name",
+        "fidora",
+        "--rm",
         "-i",
-        "fidora"
+        "fidora-app"
       ],
       "disabled": false,
       "autoApprove": [

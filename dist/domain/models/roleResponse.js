@@ -9,13 +9,15 @@ export class RoleResponse {
     _analysis;
     _recommendations;
     _nextSteps;
-    constructor(_roleId, _roleName, _context, _analysis, _recommendations, _nextSteps) {
+    _codeExamples;
+    constructor(_roleId, _roleName, _context, _analysis, _recommendations, _nextSteps, _codeExamples = []) {
         this._roleId = _roleId;
         this._roleName = _roleName;
         this._context = _context;
         this._analysis = _analysis;
         this._recommendations = _recommendations;
         this._nextSteps = _nextSteps;
+        this._codeExamples = _codeExamples;
     }
     /**
      * Creates a new RoleResponse instance.
@@ -25,16 +27,17 @@ export class RoleResponse {
      * @param analysis The detailed analysis provided by the role
      * @param recommendations Key recommendations from the role
      * @param nextSteps Suggested next steps to take
+     * @param codeExamples Code examples provided by the role
      * @returns A new RoleResponse instance
      */
-    static create(roleId, roleName, context, analysis, recommendations, nextSteps) {
+    static create(roleId, roleName, context, analysis, recommendations, nextSteps = [], codeExamples = []) {
         if (!roleId || !roleName || !context || !analysis) {
             throw new Error("RoleResponse must have a roleId, roleName, context, and analysis");
         }
         if (!recommendations || recommendations.length === 0) {
             throw new Error("RoleResponse must have at least one recommendation");
         }
-        return new RoleResponse(roleId, roleName, context, analysis, recommendations, nextSteps || []);
+        return new RoleResponse(roleId, roleName, context, analysis, recommendations, nextSteps, codeExamples);
     }
     /**
      * Converts the response to a JSON-serializable object.
@@ -47,7 +50,8 @@ export class RoleResponse {
             context: this._context,
             analysis: this._analysis,
             recommendations: this._recommendations,
-            nextSteps: this._nextSteps
+            nextSteps: this._nextSteps,
+            codeExamples: this._codeExamples
         };
     }
     // Getters
@@ -68,6 +72,9 @@ export class RoleResponse {
     }
     get nextSteps() {
         return [...this._nextSteps];
+    }
+    get codeExamples() {
+        return [...this._codeExamples];
     }
 }
 //# sourceMappingURL=roleResponse.js.map

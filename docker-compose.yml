@@ -1,7 +1,8 @@
 version: '3.8'
 
 services:
-  app:
+  fidora:
+    container_name: fidora
     build:
       context: .
       dockerfile: Dockerfile.dev
@@ -9,7 +10,7 @@ services:
     volumes:
       - ./src:/app/src
       - ./package.json:/app/package.json
-      - ./pnpm-lock.yaml:/app/pnpm-lock.yaml # Or package-lock.json if used
+      - ./pnpm-lock.yaml:/app/pnpm-lock.yaml
       - ./tsconfig.json:/app/tsconfig.json
       - ./nodemon.json:/app/nodemon.json
       # Use an anonymous volume for node_modules
@@ -19,9 +20,9 @@ services:
     # No need for command override as it's in Dockerfile.dev
     environment:
       - NODE_ENV=development
-    # If your app needs a port exposed for development:
-    # ports:
-    #   - "YOUR_LOCAL_PORT:CONTAINER_PORT"
+      - DEBUG=true
     # Keep the container running
     tty: true
     stdin_open: true
+    # Restart on failure
+    restart: unless-stopped

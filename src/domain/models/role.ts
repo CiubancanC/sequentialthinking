@@ -48,7 +48,6 @@ export class Role {
    * @returns A formatted prompt string
    */
   public generatePrompt(context: string): string {
-    // TODO: Explore advanced prompt engineering techniques here for better AI responses.
     return `As a senior ${this._name}, I will address the following: ${context}
 
 My responsibilities include:
@@ -59,8 +58,36 @@ ${this._expertise.map(e => `- ${e}`).join('\n')}
 
 ${this._description}
 
+I will provide a comprehensive response with the following structure:
+1. A detailed analysis of the problem
+2. Specific, actionable recommendations
+3. Clear next steps to implement the solution
+4. ${this.getCodeExamplesPrompt()}
+
 I will now analyze the problem and provide expert guidance:
 `;
+  }
+
+  /**
+   * Gets the code examples prompt based on the role.
+   * @returns A string with the code examples prompt
+   */
+  private getCodeExamplesPrompt(): string {
+    // Customize the code examples prompt based on the role
+    switch (this._id.toLowerCase()) {
+      case 'senior-developer':
+        return 'Concrete code examples with detailed implementations (not just pseudocode)';
+      case 'architect':
+        return 'Architecture diagrams and component descriptions';
+      case 'qa-engineer':
+        return 'Test cases and testing strategies';
+      case 'devops-engineer':
+        return 'Infrastructure as code examples and CI/CD pipeline configurations';
+      case 'security-engineer':
+        return 'Security control implementations and best practices';
+      default:
+        return 'Relevant examples to illustrate the solution';
+    }
   }
 
   // Getters

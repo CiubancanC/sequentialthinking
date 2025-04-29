@@ -1,5 +1,12 @@
 {
-  "watch": ["dist"],
-  "ext": "js",
-  "exec": "node dist/index.js"
+  "watch": ["dist", "src"],
+  "ext": "js,ts,json",
+  "exec": "node dist/index.js",
+  "ignore": ["node_modules", ".git", "dist/tests"],
+  "delay": "500",
+  "verbose": true,
+  "env": {
+    "NODE_ENV": "development",
+    "DEBUG": "true"
+  }
 }

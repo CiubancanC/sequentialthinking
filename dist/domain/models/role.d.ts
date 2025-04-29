@@ -25,6 +25,11 @@ export declare class Role {
      * @returns A formatted prompt string
      */
     generatePrompt(context: string): string;
+    /**
+     * Gets the code examples prompt based on the role.
+     * @returns A string with the code examples prompt
+     */
+    private getCodeExamplesPrompt;
     get id(): string;
     get name(): string;
     get description(): string;

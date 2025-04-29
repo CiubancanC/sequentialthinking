@@ -29,7 +29,12 @@
     "docker:build": "npm run build && docker build -t fidora-app:latest -f Dockerfile .",
     "docker:run": "docker run --name fidora --rm -i fidora-app:latest",
     "docker:stop": "docker stop fidora || true",
-    "docker:deploy": "npm run docker:stop && npm run docker:build && npm run docker:run"
+    "docker:deploy": "npm run docker:stop && npm run docker:build && npm run docker:run",
+    "docker:dev:build": "docker-compose build",
+    "docker:dev:up": "docker-compose up",
+    "docker:dev:down": "docker-compose down",
+    "docker:dev": "npm run docker:dev:build && npm run docker:dev:up",
+    "docker:dev:logs": "docker logs -f fidora"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.10.2",

@@ -9,6 +9,7 @@ export declare class RoleResponse {
     private readonly _analysis;
     private readonly _recommendations;
     private readonly _nextSteps;
+    private readonly _codeExamples;
     private constructor();
     /**
      * Creates a new RoleResponse instance.
@@ -18,9 +19,10 @@ export declare class RoleResponse {
      * @param analysis The detailed analysis provided by the role
      * @param recommendations Key recommendations from the role
      * @param nextSteps Suggested next steps to take
+     * @param codeExamples Code examples provided by the role
      * @returns A new RoleResponse instance
      */
-    static create(roleId: string, roleName: string, context: string, analysis: string, recommendations: string[], nextSteps: string[]): RoleResponse;
+    static create(roleId: string, roleName: string, context: string, analysis: string, recommendations: string[], nextSteps?: string[], codeExamples?: string[]): RoleResponse;
     /**
      * Converts the response to a JSON-serializable object.
      * @returns A plain object representation of the response
@@ -32,4 +34,5 @@ export declare class RoleResponse {
     get analysis(): string;
     get recommendations(): string[];
     get nextSteps(): string[];
+    get codeExamples(): string[];
 }
