@@ -1,6 +1,6 @@
-# Hello World MCP Server
+# CEO MCP Server
 
-A simple MCP server implementation that provides a "Hello World" greeting tool. This server demonstrates the basic functionality of the MCP protocol while following CLEAN architecture principles.
+An MCP server implementation that provides role-based prompting tools. This server enables AI models to adopt different professional roles (architect, senior developer, QA engineer, etc.) to enhance problem-solving and software development tasks while following CLEAN architecture principles.
 
 ## Architecture
 
@@ -10,7 +10,7 @@ This project follows CLEAN architecture principles to ensure maintainability, te
 
 The core business logic and entities of the application. This layer is independent of any external concerns and contains:
 
-- **Models**: Core business entities and value objects
+- **Models**: Core business entities and value objects (roles, scenarios)
 - **Interfaces**: Contracts that define how the domain interacts with other layers
 - **Services**: Domain-specific business logic that operates on multiple entities
 
@@ -26,8 +26,8 @@ Coordinates the flow of data between the domain layer and the external world. It
 
 Provides concrete implementations for interfaces defined in the domain layer and handles external concerns:
 
-- External services and APIs
-- Databases and data access
+- Role-based prompting mechanisms
+- Scenario management
 - Frameworks and libraries
 - Server and network communication
 
@@ -41,29 +41,32 @@ Handles formatting and presenting data to users or external systems:
 
 ## Features
 
-- Simple "Hello World" greeting functionality
-- Customizable greeting message
-- Optional name parameter to personalize the greeting
-- Maintains a history of all greetings
-- Demonstrates CLEAN architecture principles in a minimal implementation
+- Role-based prompting system for AI models
+- Multiple professional roles (architect, senior developer, QA engineer, etc.)
+- Scenario-based problem-solving approach
+- Systematic division of tasks through prompting
+- Early detection and prevention of bugs
+- Ensures readable and maintainable architecture
+- Professional-level expertise in each role
 
-## Tool
+## Tools
 
-### helloworld
+### rolePrompt
 
-A simple tool that provides a customizable "Hello World" greeting.
+A tool that enables AI models to adopt specific professional roles for enhanced problem-solving.
 
 **Inputs:**
-- `message` (string): The greeting message to send (e.g., "Hello", "Hi", "Greetings")
-- `name` (string, optional): The name of the person to greet (defaults to "World" if not specified)
+- `role` (string): The professional role to adopt (e.g., "architect", "senior-developer", "qa-engineer")
+- `context` (string): The context or problem description for the role to address
 
 ## Usage
 
-The Hello World tool is designed for:
-- Demonstrating the basic functionality of the MCP protocol
-- Learning how to implement a simple MCP server
-- Testing the connection between a client and the MCP server
-- Providing a template for more complex MCP implementations
+The CEO MCP tools are designed for:
+- Enhancing AI model capabilities through role-based prompting
+- Enabling systematic division of complex tasks
+- Improving software development processes with expert-level guidance
+- Ensuring early detection and prevention of bugs
+- Promoting readable and maintainable architecture
 
 ## Configuration
 
@@ -76,11 +79,11 @@ Add this to your `claude_desktop_config.json`:
 ```json
 {
   "mcpServers": {
-    "helloworld": {
+    "ceomcp": {
       "command": "npx",
       "args": [
         "-y",
-        "@modelcontextprotocol/server-helloworld"
+        "@modelcontextprotocol/server-ceomcp"
       ]
     }
   }
@@ -92,13 +95,13 @@ Add this to your `claude_desktop_config.json`:
 ```json
 {
   "mcpServers": {
-    "helloworld": {
+    "ceomcp": {
       "command": "docker",
       "args": [
         "run",
         "--rm",
         "-i",
-        "mcp/helloworld"
+        "mcp/ceomcp"
       ]
     }
   }
@@ -119,11 +122,11 @@ For NPX installation:
 {
   "mcp": {
     "servers": {
-      "helloworld": {
+      "ceomcp": {
         "command": "npx",
         "args": [
           "-y",
-          "@modelcontextprotocol/server-helloworld"
+          "@modelcontextprotocol/server-ceomcp"
         ]
       }
     }
@@ -137,13 +140,13 @@ For Docker installation:
 {
   "mcp": {
     "servers": {
-      "helloworld": {
+      "ceomcp": {
         "command": "docker",
         "args": [
           "run",
           "--rm",
           "-i",
-          "mcp/helloworld"
+          "mcp/ceomcp"
         ]
       }
     }
@@ -157,10 +160,10 @@ For development purposes, you can run the server directly from the source code:
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/hello-world-mcp.git
+git clone https://github.com/yourusername/ceomcp.git
 
 # Navigate to the project directory
-cd hello-world-mcp
+cd ceomcp
 
 # Install dependencies
 npm install
@@ -174,7 +177,7 @@ npm run dev
 ```
 src/
 ├── domain/                 # Core business logic and entities
-│   ├── models/             # Domain models and entities
+│   ├── models/             # Domain models and entities (roles, scenarios)
 │   ├── interfaces/         # Interfaces for repositories and services
 │   └── services/           # Domain services
 ├── application/            # Application use cases
@@ -197,7 +200,7 @@ config/                     # Configuration files
 Docker:
 
 ```bash
-docker build -t mcp/helloworld -f Dockerfile .
+docker build -t mcp/ceomcp -f Dockerfile .
 ```
 
 ## Development
@@ -218,12 +221,12 @@ npm run dev
 
 ## Example Usage
 
-Here's an example of how to use the Hello World tool:
+Here's an example of how to use the rolePrompt tool:
 
 ```json
 {
-  "message": "Hello",
-  "name": "John"
+  "role": "architect",
+  "context": "Design a scalable microservice architecture for an e-commerce platform"
 }
 ```
 
@@ -231,16 +234,26 @@ Response:
 
 ```json
 {
-  "greeting": "Hello, John!",
-  "messageHistoryLength": 1
+  "rolePrompt": "As a senior architect, I'll design a scalable microservice architecture for an e-commerce platform...",
+  "recommendations": [
+    "Use API Gateway for client communication",
+    "Implement event-driven communication between services",
+    "Design with domain-driven boundaries"
+  ],
+  "nextSteps": [
+    "Define service boundaries",
+    "Design data model",
+    "Plan deployment strategy"
+  ]
 }
 ```
 
-Without specifying a name:
+Using a different role:
 
 ```json
 {
-  "message": "Hello"
+  "role": "qa-engineer",
+  "context": "Develop a testing strategy for a new payment processing system"
 }
 ```
 
@@ -248,8 +261,18 @@ Response:
 
 ```json
 {
-  "greeting": "Hello, World!",
-  "messageHistoryLength": 1
+  "rolePrompt": "As a senior QA engineer, I'll develop a comprehensive testing strategy for the new payment processing system...",
+  "testingApproach": [
+    "Unit testing for all components",
+    "Integration testing for service interactions",
+    "End-to-end testing for critical payment flows",
+    "Security testing for payment data"
+  ],
+  "riskAssessment": [
+    "Payment failures",
+    "Data security vulnerabilities",
+    "Performance under high load"
+  ]
 }
 ```
 
