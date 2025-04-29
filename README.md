@@ -197,23 +197,60 @@ config/                     # Configuration files
 Docker:
 
 ```bash
-docker build -t mcp/ceomcp -f src/ceomcp/Dockerfile .
+docker build -t mcp/helloworld -f Dockerfile .
 ```
 
 ## Development
 
 ```bash
 # Install dependencies
-pnpm install
+npm install
 
 # Build the project
-pnpm build
+npm run build
 
 # Run tests
-pnpm test
+npm test
 
 # Start the server in development mode (with auto-reload)
-pnpm dev
+npm run dev
+```
+
+## Example Usage
+
+Here's an example of how to use the Hello World tool:
+
+```json
+{
+  "message": "Hello",
+  "name": "John"
+}
+```
+
+Response:
+
+```json
+{
+  "greeting": "Hello, John!",
+  "messageHistoryLength": 1
+}
+```
+
+Without specifying a name:
+
+```json
+{
+  "message": "Hello"
+}
+```
+
+Response:
+
+```json
+{
+  "greeting": "Hello, World!",
+  "messageHistoryLength": 1
+}
 ```
 
 ## License
