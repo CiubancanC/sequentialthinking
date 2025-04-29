@@ -19,6 +19,7 @@ export declare class InMemoryRoleRepository implements IRoleRepository {
      * @returns The role if found, null otherwise
      */
     getRoleById(id: string): Promise<Role | null>;
+    private roleAliases;
     /**
      * Gets a role by its name or ID.
      * @param name The role name or ID

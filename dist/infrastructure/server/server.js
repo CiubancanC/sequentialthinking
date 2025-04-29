@@ -33,6 +33,7 @@ export function createServer() {
         // Set up the use cases
         const processRolePromptUseCase = new ProcessRolePromptUseCase(roleService);
         const processSequentialThinkingUseCase = new ProcessSequentialThinkingUseCase(roleService, automaticRoleService, sequentialThinkingService);
+        console.error("[DEBUG] Adding rolePrompt tool");
         // Add the rolePrompt tool
         server.tool(ROLE_PROMPT_TOOL.name, {
             role: z.string().describe("The professional role to adopt"),
@@ -94,6 +95,7 @@ export function createServer() {
                 };
             }
         });
+        console.error("[DEBUG] Adding sequentialThinking tool");
         // Add the sequentialThinking tool
         server.tool(SEQUENTIAL_THINKING_TOOL.name, {
             context: z.string().describe("The context or problem description to address with sequential thinking"),
@@ -118,12 +120,19 @@ export function createServer() {
                 else if (result.data) {
                     // Handle success case
                     // Format the sequential thinking for console display
-                    const steps = result.data.steps.map(step => ({
-                        role: { name: step.roleName },
-                        context: step.context,
-                        output: step.output
-                    }));
-                    console.error(SequentialThinkingFormatter.formatForConsole(steps, args.context));
+                    // We'll modify the formatter to accept a simpler structure instead of trying to create a Role object
+                    console.error(`Sequential Thinking Process for: "${args.context.substring(0, 100)}${args.context.length > 100 ? '...' : ''}"\n\n`);
+                    result.data.steps.forEach((step, i) => {
+                        console.error(`Step ${i + 1}: ${step.roleName}\n`);
+                        console.error(`Context: ${step.context.substring(0, 100)}${step.context.length > 100 ? '...' : ''}\n`);
+                        if (step.output) {
+                            console.error(`Output: ${step.output.substring(0, 100)}${step.output.length > 100 ? '...' : ''}\n`);
+                        }
+                        else {
+                            console.error('Output: Not yet executed\n');
+                        }
+                        console.error('\n');
+                    });
                     // Return the result as JSON
                     return {
                         content: [{
@@ -156,6 +165,10 @@ export function createServer() {
                 };
             }
         });
+        // Debug: Log that we've added both tools
+        console.error("[DEBUG] Final registered tools in createServer:");
+        console.error(`[DEBUG]   - ${ROLE_PROMPT_TOOL.name}`);
+        console.error(`[DEBUG]   - ${SEQUENTIAL_THINKING_TOOL.name}`);
         return server;
     }
     catch (error) {
@@ -172,16 +185,30 @@ export async function runServer() {
     try {
         console.error("Fidora Server: Creating server instance");
         const server = createServer();
+        // Debug: Log that we've created the server with both tools
+        console.error("[DEBUG] Registered tools:");
+        console.error(`[DEBUG]   - ${ROLE_PROMPT_TOOL.name}`);
+        console.error(`[DEBUG]   - ${SEQUENTIAL_THINKING_TOOL.name}`);
         console.error("Fidora Server: Creating transport");
         const transport = new StdioServerTransport();
         try {
             console.error("Fidora Server: Connecting to transport");
+            // Debug: Log that we're about to connect with both tools
+            console.error("[DEBUG] Tools before connecting:");
+            console.error(`[DEBUG]   - ${ROLE_PROMPT_TOOL.name}`);
+            console.error(`[DEBUG]   - ${SEQUENTIAL_THINKING_TOOL.name}`);
             await server.connect(transport);
             console.error("Fidora Server running on stdio");
-            console.error("Available tools: rolePrompt, sequentialThinking");
+            // Debug: Log that we've connected with both tools
+            console.error("[DEBUG] Tools after connecting:");
+            console.error(`[DEBUG]   - ${ROLE_PROMPT_TOOL.name}`);
+            console.error(`[DEBUG]   - ${SEQUENTIAL_THINKING_TOOL.name}`);
+            // Update the available tools message
+            const toolNames = `${ROLE_PROMPT_TOOL.name}, ${SEQUENTIAL_THINKING_TOOL.name}`;
+            console.error(`Available tools: ${toolNames}`);
             // Keep the process alive indefinitely
             // The McpServer will handle the connection lifecycle
-            await new Promise((resolve) => {
+            await new Promise(() => {
                 // This promise intentionally never resolves to keep the server running
             });
         }

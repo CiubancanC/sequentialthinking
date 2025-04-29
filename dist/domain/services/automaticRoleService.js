@@ -29,10 +29,14 @@ export class AutomaticRoleServiceImpl {
         // Define keywords for each role based on the exact roles in our system
         // These IDs match the ones defined in roleRepository.ts
         const roleKeywords = {
-            'architect': ['architecture', 'design', 'system', 'structure', 'scalable', 'microservice', 'infrastructure', 'solution'],
-            'senior-developer': ['code', 'implement', 'develop', 'programming', 'function', 'class', 'method', 'algorithm', 'feature'],
-            'qa-engineer': ['test', 'quality', 'bug', 'issue', 'verify', 'validation', 'testing', 'qa', 'quality assurance'],
-            'devops-engineer': ['deploy', 'pipeline', 'ci/cd', 'infrastructure', 'container', 'docker', 'kubernetes', 'automation', 'devops']
+            'architect': ['architecture', 'design', 'system', 'structure', 'scalable', 'microservice', 'infrastructure', 'solution', 'framework', 'blueprint'],
+            'senior-developer': ['code', 'implement', 'develop', 'programming', 'function', 'class', 'method', 'algorithm', 'feature', 'library', 'api'],
+            'qa-engineer': ['test', 'quality', 'bug', 'issue', 'verify', 'validation', 'testing', 'qa', 'quality assurance', 'regression', 'defect'],
+            'devops-engineer': ['deploy', 'pipeline', 'ci/cd', 'infrastructure', 'container', 'docker', 'kubernetes', 'automation', 'devops', 'jenkins', 'terraform'],
+            'security-engineer': ['security', 'vulnerability', 'threat', 'risk', 'compliance', 'authentication', 'authorization', 'encryption', 'firewall', 'penetration'],
+            'data-scientist': ['data', 'analytics', 'machine learning', 'ai', 'model', 'prediction', 'statistics', 'dataset', 'algorithm', 'neural network', 'classification'],
+            'ux-designer': ['user experience', 'ui', 'ux', 'interface', 'usability', 'wireframe', 'prototype', 'user research', 'accessibility', 'design system'],
+            'product-manager': ['product', 'roadmap', 'feature', 'requirement', 'user story', 'backlog', 'prioritization', 'market', 'customer', 'stakeholder']
         };
         // Create a map of role IDs to roles for quick lookup
         const roleMap = new Map();

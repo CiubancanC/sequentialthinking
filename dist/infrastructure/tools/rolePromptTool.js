@@ -17,12 +17,16 @@ Available roles (use EXACTLY these role names):
 - senior-developer: For implementation guidance, coding best practices, and technical solutions
 - qa-engineer: For testing strategies, quality assurance, and bug prevention
 - devops-engineer: For deployment, CI/CD, and infrastructure concerns
+- security-engineer: For security assessments, vulnerability management, and security best practices
+- data-scientist: For data analysis, machine learning, and statistical insights
+- ux-designer: For user experience design, interface improvements, and usability considerations
+- product-manager: For product strategy, feature prioritization, and roadmap planning
 
-IMPORTANT: You must use the exact role names listed above (architect, senior-developer, qa-engineer, devops-engineer).
-Do not use variations like "Senior Developer" or "Software Engineer" as they will not be recognized.
+IMPORTANT: You must use the exact role names listed above. The system supports fuzzy matching and aliases,
+but using the exact role names is recommended for best results.
 
 Parameters explained:
-- role: The professional role to adopt (must be one of: "architect", "senior-developer", "qa-engineer", "devops-engineer")
+- role: The professional role to adopt (one of the roles listed above)
 - context: The specific problem or situation that needs to be addressed
 - scenarioId (optional): ID of a predefined scenario to use for additional context
 

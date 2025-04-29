@@ -146,12 +146,21 @@ export function createServer(): McpServer {
           } else if (result.data) {
             // Handle success case
             // Format the sequential thinking for console display
-            const steps = result.data.steps.map(step => ({
-              role: { name: step.roleName },
-              context: step.context,
-              output: step.output
-            }));
-            console.error(SequentialThinkingFormatter.formatForConsole(steps, args.context));
+            // We'll modify the formatter to accept a simpler structure instead of trying to create a Role object
+            console.error(`Sequential Thinking Process for: "${args.context.substring(0, 100)}${args.context.length > 100 ? '...' : ''}"\n\n`);
+
+            result.data.steps.forEach((step, i) => {
+              console.error(`Step ${i + 1}: ${step.roleName}\n`);
+              console.error(`Context: ${step.context.substring(0, 100)}${step.context.length > 100 ? '...' : ''}\n`);
+
+              if (step.output) {
+                console.error(`Output: ${step.output.substring(0, 100)}${step.output.length > 100 ? '...' : ''}\n`);
+              } else {
+                console.error('Output: Not yet executed\n');
+              }
+
+              console.error('\n');
+            });
 
             // Return the result as JSON
             return {
@@ -240,7 +249,7 @@ export async function runServer(): Promise<void> {
 
       // Keep the process alive indefinitely
       // The McpServer will handle the connection lifecycle
-      await new Promise<void>((resolve) => {
+      await new Promise<void>(() => {
         // This promise intentionally never resolves to keep the server running
       });
     } catch (error) {

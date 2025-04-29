@@ -52,6 +52,22 @@ export interface RolePromptResponseDto {
      */
     codeExamples?: string[];
     /**
+     * Security controls (for security engineer role).
+     */
+    securityControls?: string[];
+    /**
+     * Analytical approach (for data scientist role).
+     */
+    analyticalApproach?: string[];
+    /**
+     * Design principles (for UX designer role).
+     */
+    designPrinciples?: string[];
+    /**
+     * Product strategy (for product manager role).
+     */
+    productStrategy?: string[];
+    /**
      * Error message if the request failed.
      */
     error?: string;
