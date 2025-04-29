@@ -1,9 +1,9 @@
-import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 /**
  * Creates and configures the MCP server.
  * @returns The configured server.
  */
-export declare function createServer(): Server;
+export declare function createServer(): McpServer;
 /**
  * Initializes and runs the MCP server using standard I/O transport.
  */

@@ -3,14 +3,22 @@
 import { runServer } from './server.js';
 
 /**
- * Entry point for the Hello World MCP server.
+ * Entry point for the CEO MCP server.
  * Starts the server and handles any fatal errors.
  */
 export function main(): void {
-  runServer().catch((error) => {
-    console.error("Fatal error running server:", error);
+  console.error("CEO MCP Server: Starting main function in server/index.ts");
+  try {
+    runServer().catch((error) => {
+      console.error("Fatal error running server:", error);
+      console.error("Error details:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
+      process.exit(1);
+    });
+  } catch (error) {
+    console.error("Unexpected error in main function:", error);
+    console.error("Error details:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
     process.exit(1);
-  });
+  }
 }
 
 // If this file is run directly, start the server
