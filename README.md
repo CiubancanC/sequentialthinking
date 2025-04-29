@@ -129,6 +129,29 @@ For Docker installation:
 }
 ```
 
+### Development Configuration (cline_mcp_settings.json)
+
+For development purposes using the VS Code extension, you might use the following configuration in your `cline_mcp_settings.json` file (typically located in the extension's global storage):
+
+```json
+{
+  "sequentialthinking": {
+    "command": "docker",
+    "args": [
+      "run",
+      "-i",
+      "--rm",
+      "sequentialthinking-app"
+    ],
+    "disabled": false,
+    "autoApprove": [
+      "sequentialthinking"
+    ]
+  }
+}
+```
+Note the use of `sequentialthinking-app` as the image name, which should correspond to a local build
+
 ## Building
 
 Docker:
