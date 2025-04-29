@@ -1,5 +1,5 @@
 # ---- Builder Stage ----
-FROM node:22.12-alpine AS builder
+FROM node:slim AS builder
 
 WORKDIR /app
 
