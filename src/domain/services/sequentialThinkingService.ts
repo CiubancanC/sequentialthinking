@@ -21,6 +21,13 @@ export interface SequentialStep {
    * The output from this step, if it has been executed.
    */
   output?: string;
+  /**
+   * Optional suggestion for an external tool to use after this step.
+   */
+  suggestedTool?: {
+    name: string;
+    args: any;
+  };
 }
 
 /**
@@ -182,15 +189,27 @@ export class SequentialThinkingServiceImpl implements ISequentialThinkingService
     );
 
     // In a real implementation, this would call an LLM to generate the output
-    // For now, we'll just return a placeholder
+    // and potentially determine if a tool should be suggested.
+    // For now, we'll just return a placeholder output and add a placeholder tool suggestion
+    // for the 'senior-developer' role as an example.
+
     const output = `This is a placeholder output for the ${step.role.name} role.
 Based on the context: ${enhancedContext.substring(0, 50)}...
 The role would analyze this and provide expert guidance.`;
 
-    // Return the updated step with output
+    let suggestedTool = undefined;
+    if (step.role.name.toLowerCase() === 'senior developer') {
+      suggestedTool = {
+        name: 'brave_web_search',
+        args: { query: `code examples for ${step.context.substring(0, 20)}...` }
+      };
+    }
+
+    // Return the updated step with output and potential tool suggestion
     return {
       ...step,
-      output
+      output,
+      suggestedTool
     };
   }
 

@@ -79,11 +79,11 @@ Add this to your `claude_desktop_config.json`:
 ```json
 {
   "mcpServers": {
-    "ceomcp": {
+    "fidora": {
       "command": "npx",
       "args": [
         "-y",
-        "@modelcontextprotocol/server-ceomcp"
+        "@modelcontextprotocol/server-fidora"
       ]
     }
   }
@@ -95,13 +95,13 @@ Add this to your `claude_desktop_config.json`:
 ```json
 {
   "mcpServers": {
-    "ceomcp": {
+    "fidora": {
       "command": "docker",
       "args": [
         "run",
         "--rm",
         "-i",
-        "mcp/ceomcp"
+        "fidora-app"
       ]
     }
   }
@@ -122,11 +122,11 @@ For NPX installation:
 {
   "mcp": {
     "servers": {
-      "ceomcp": {
+      "fidora": {
         "command": "npx",
         "args": [
           "-y",
-          "@modelcontextprotocol/server-ceomcp"
+          "@modelcontextprotocol/server-fidora"
         ]
       }
     }
@@ -140,13 +140,13 @@ For Docker installation:
 {
   "mcp": {
     "servers": {
-      "ceomcp": {
+      "fidora": {
         "command": "docker",
         "args": [
           "run",
           "--rm",
           "-i",
-          "mcp/ceomcp"
+          "fidora-app"
         ]
       }
     }
@@ -160,10 +160,10 @@ For development purposes, you can run the server directly from the source code:
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/ceomcp.git
+git clone https://github.com/yourusername/fidora.git
 
 # Navigate to the project directory
-cd ceomcp
+cd fidora
 
 # Install dependencies
 npm install
@@ -195,12 +195,45 @@ tests/                      # Test files mirroring src structure
 config/                     # Configuration files
 ```
 
-## Building
+## Building and Deployment
 
-Docker:
+### Docker
+
+Build the Docker image:
 
 ```bash
-docker build -t mcp/ceomcp -f Dockerfile .
+# Build the Docker image
+npm run docker:build
+```
+
+Run the Docker container:
+
+```bash
+# Run the Docker container
+npm run docker:run
+```
+
+Or use the all-in-one deployment script:
+
+```bash
+# Stop any existing container, build a new image, and run it
+npm run docker:deploy
+```
+
+### Available Docker Scripts
+
+- `docker:build`: Builds the TypeScript project and creates a new Docker image tagged as `fidora-app:latest`
+- `docker:run`: Runs a Docker container named `fidora` using the latest image
+- `docker:stop`: Stops the running `fidora` container (if it exists)
+- `docker:deploy`: Combines the above scripts to stop any existing container, build a new image, and run it
+
+### Manual Docker Build
+
+If you prefer to use Docker commands directly:
+
+```bash
+docker build -t fidora-app -f Dockerfile .
+docker run --name fidora --rm -i fidora-app
 ```
 
 ## Development

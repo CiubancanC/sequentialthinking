@@ -42,6 +42,7 @@ export class Role {
      * @returns A formatted prompt string
      */
     generatePrompt(context) {
+        // TODO: Explore advanced prompt engineering techniques here for better AI responses.
         return `As a senior ${this._name}, I will address the following: ${context}
 
 My responsibilities include:

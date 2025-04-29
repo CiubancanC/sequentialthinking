@@ -90,20 +90,24 @@ export class AutomaticRoleServiceImpl implements IAutomaticRoleService {
         return count + (contextLower.includes(keyword) ? 1 : 0);
       }, 0);
 
-      return { role, score };
+      // Add a higher score if the role name is explicitly mentioned
+      let nameScore = 0;
+      if (contextLower.includes(role.name.toLowerCase())) {
+          nameScore = 5; // Give a significant boost for explicit mention
+      }
+
+      return { role, score: score + nameScore };
     }).filter(item => item.role !== null);
 
     // Sort roles by score (descending)
     roleScores.sort((a, b) => b.score - a.score);
 
-    // Return the highest-scoring role, or the first available role if no role scored above 0
-    if (roleScores.length > 0) {
-      if (roleScores[0].score > 0) {
-        return roleScores[0].role;
-      }
+    // Return the highest-scoring role
+    if (roleScores.length > 0 && roleScores[0].score > 0) {
+      return roleScores[0].role;
     }
 
-    // If no role matched, return the first available role (default to architect)
+    // If no role matched with a score > 0, return a default role (Architect) or the first available role
     const defaultRole = await this.repository.getRoleByName('Architect') ||
                         await this.repository.getRoleById('architect') ||
                         roles[0];

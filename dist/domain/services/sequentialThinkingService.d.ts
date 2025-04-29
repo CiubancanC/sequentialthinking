@@ -17,6 +17,13 @@ export interface SequentialStep {
      * The output from this step, if it has been executed.
      */
     output?: string;
+    /**
+     * Optional suggestion for an external tool to use after this step.
+     */
+    suggestedTool?: {
+        name: string;
+        args: any;
+    };
 }
 /**
  * Interface for the sequential thinking service.
