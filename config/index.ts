@@ -10,14 +10,14 @@ export const config = {
     /**
      * The name of the server.
      */
-    name: "ceomcp-server",
-    
+    name: "hello-world-server",
+
     /**
      * The version of the server.
      */
-    version: "0.2.0",
+    version: "1.0.0",
   },
-  
+
   /**
    * Logging configuration.
    */
@@ -26,7 +26,7 @@ export const config = {
      * Whether to enable debug logging.
      */
     debug: process.env.DEBUG === "true",
-    
+
     /**
      * Whether to enable colorized output.
      */

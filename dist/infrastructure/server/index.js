@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { runServer } from './server.js';
 /**
- * Entry point for the CEOMCP server.
+ * Entry point for the Hello World MCP server.
  * Starts the server and handles any fatal errors.
  */
 export function main() {

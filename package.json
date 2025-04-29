@@ -1,14 +1,14 @@
 {
-  "name": "@modelcontextprotocol/server-ceomcp",
-  "version": "0.6.2",
-  "description": "MCP server for CEOMCP",
+  "name": "@modelcontextprotocol/server-helloworld",
+  "version": "1.0.0",
+  "description": "MCP server for Hello World",
   "license": "MIT",
   "author": "Anthropic, PBC (https://anthropic.com)",
   "homepage": "https://modelcontextprotocol.io",
   "bugs": "https://github.com/modelcontextprotocol/servers/issues",
   "type": "module",
   "bin": {
-    "mcp-server-ceomcp": "dist/index.js"
+    "mcp-server-helloworld": "dist/index.js"
   },
   "files": [
     "dist"
