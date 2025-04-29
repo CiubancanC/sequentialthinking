@@ -14,14 +14,21 @@ When to use this tool:
 - When you want to approach a problem with a specific role's expertise
 - When you need to systematically divide tasks among different roles
 
-Available roles:
+Available roles (use EXACTLY these role names):
 - architect: For system design, architecture decisions, and technical planning
 - senior-developer: For implementation guidance, coding best practices, and technical solutions
 - qa-engineer: For testing strategies, quality assurance, and bug prevention
 - devops-engineer: For deployment, CI/CD, and infrastructure concerns
+- security-engineer: For security assessments, vulnerability management, and security best practices
+- data-scientist: For data analysis, machine learning, and statistical insights
+- ux-designer: For user experience design, interface improvements, and usability considerations
+- product-manager: For product strategy, feature prioritization, and roadmap planning
+
+IMPORTANT: You must use the exact role names listed above. The system supports fuzzy matching and aliases,
+but using the exact role names is recommended for best results.
 
 Parameters explained:
-- role: The professional role to adopt (e.g., "architect", "senior-developer", "qa-engineer")
+- role: The professional role to adopt (one of the roles listed above)
 - context: The specific problem or situation that needs to be addressed
 - scenarioId (optional): ID of a predefined scenario to use for additional context
 

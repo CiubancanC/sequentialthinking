@@ -46,6 +46,8 @@ export function createServer(): McpServer {
       sequentialThinkingService
     );
 
+    console.error("[DEBUG] Adding rolePrompt tool");
+
     // Add the rolePrompt tool
     server.tool(
       ROLE_PROMPT_TOOL.name,
@@ -113,6 +115,8 @@ export function createServer(): McpServer {
         }
       }
     );
+
+    console.error("[DEBUG] Adding sequentialThinking tool");
 
     // Add the sequentialThinking tool
     server.tool(
@@ -183,6 +187,11 @@ export function createServer(): McpServer {
       }
     );
 
+    // Debug: Log that we've added both tools
+    console.error("[DEBUG] Final registered tools in createServer:");
+    console.error(`[DEBUG]   - ${ROLE_PROMPT_TOOL.name}`);
+    console.error(`[DEBUG]   - ${SEQUENTIAL_THINKING_TOOL.name}`);
+
     return server;
   } catch (error) {
     console.error("Error creating server:", error);
@@ -201,14 +210,33 @@ export async function runServer(): Promise<void> {
     console.error("Fidora Server: Creating server instance");
     const server = createServer();
 
+    // Debug: Log that we've created the server with both tools
+    console.error("[DEBUG] Registered tools:");
+    console.error(`[DEBUG]   - ${ROLE_PROMPT_TOOL.name}`);
+    console.error(`[DEBUG]   - ${SEQUENTIAL_THINKING_TOOL.name}`);
+
     console.error("Fidora Server: Creating transport");
     const transport = new StdioServerTransport();
 
     try {
       console.error("Fidora Server: Connecting to transport");
+
+      // Debug: Log that we're about to connect with both tools
+      console.error("[DEBUG] Tools before connecting:");
+      console.error(`[DEBUG]   - ${ROLE_PROMPT_TOOL.name}`);
+      console.error(`[DEBUG]   - ${SEQUENTIAL_THINKING_TOOL.name}`);
+
       await server.connect(transport);
       console.error("Fidora Server running on stdio");
-      console.error("Available tools: rolePrompt, sequentialThinking");
+
+      // Debug: Log that we've connected with both tools
+      console.error("[DEBUG] Tools after connecting:");
+      console.error(`[DEBUG]   - ${ROLE_PROMPT_TOOL.name}`);
+      console.error(`[DEBUG]   - ${SEQUENTIAL_THINKING_TOOL.name}`);
+
+      // Update the available tools message
+      const toolNames = `${ROLE_PROMPT_TOOL.name}, ${SEQUENTIAL_THINKING_TOOL.name}`;
+      console.error(`Available tools: ${toolNames}`);
 
       // Keep the process alive indefinitely
       // The McpServer will handle the connection lifecycle

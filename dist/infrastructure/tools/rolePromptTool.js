@@ -12,14 +12,17 @@ When to use this tool:
 - When you want to approach a problem with a specific role's expertise
 - When you need to systematically divide tasks among different roles
 
-Available roles:
+Available roles (use EXACTLY these role names):
 - architect: For system design, architecture decisions, and technical planning
 - senior-developer: For implementation guidance, coding best practices, and technical solutions
 - qa-engineer: For testing strategies, quality assurance, and bug prevention
 - devops-engineer: For deployment, CI/CD, and infrastructure concerns
 
+IMPORTANT: You must use the exact role names listed above (architect, senior-developer, qa-engineer, devops-engineer).
+Do not use variations like "Senior Developer" or "Software Engineer" as they will not be recognized.
+
 Parameters explained:
-- role: The professional role to adopt (e.g., "architect", "senior-developer", "qa-engineer")
+- role: The professional role to adopt (must be one of: "architect", "senior-developer", "qa-engineer", "devops-engineer")
 - context: The specific problem or situation that needs to be addressed
 - scenarioId (optional): ID of a predefined scenario to use for additional context
 

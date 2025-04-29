@@ -24,14 +24,29 @@ export class InMemoryRoleRepository {
         return this.roles.get(id) || null;
     }
     /**
-     * Gets a role by its name.
-     * @param name The role name
+     * Gets a role by its name or ID.
+     * @param name The role name or ID
      * @returns The role if found, null otherwise
      */
     async getRoleByName(name) {
         const normalizedName = name.toLowerCase();
+        // First, try to get the role by ID (direct lookup)
+        const roleById = this.roles.get(normalizedName);
+        if (roleById) {
+            return roleById;
+        }
+        // If not found by ID, try to match by name
         for (const role of this.roles.values()) {
             if (role.name.toLowerCase() === normalizedName) {
+                return role;
+            }
+        }
+        // If still not found, try to match by ID with different formats
+        // For example, "senior-developer" vs "Senior Developer" vs "senior developer"
+        const normalizedNameNoHyphens = normalizedName.replace(/-/g, ' ');
+        for (const role of this.roles.values()) {
+            const roleIdNoHyphens = role.id.toLowerCase().replace(/-/g, ' ');
+            if (roleIdNoHyphens === normalizedNameNoHyphens) {
                 return role;
             }
         }

@@ -121,6 +121,82 @@ export class ProcessRolePromptUseCase {
             'Document deployment process'
           ];
           break;
+        case 'security engineer':
+          response.recommendations = [
+            'Implement defense in depth',
+            'Follow the principle of least privilege',
+            'Conduct regular security assessments'
+          ];
+          response.nextSteps = [
+            'Perform threat modeling',
+            'Implement security controls',
+            'Conduct penetration testing'
+          ];
+          response.securityControls = [
+            'Authentication and authorization',
+            'Data encryption',
+            'Input validation',
+            'Secure coding practices',
+            'Security monitoring'
+          ];
+          break;
+        case 'data scientist':
+          response.recommendations = [
+            'Clean and preprocess data thoroughly',
+            'Use appropriate algorithms for the problem',
+            'Validate models with multiple metrics'
+          ];
+          response.nextSteps = [
+            'Collect and prepare data',
+            'Develop and train models',
+            'Evaluate and refine results'
+          ];
+          response.analyticalApproach = [
+            'Exploratory data analysis',
+            'Feature engineering',
+            'Model selection and training',
+            'Hyperparameter tuning',
+            'Model evaluation'
+          ];
+          break;
+        case 'ux designer':
+          response.recommendations = [
+            'Focus on user needs and goals',
+            'Create intuitive and accessible interfaces',
+            'Test designs with real users'
+          ];
+          response.nextSteps = [
+            'Conduct user research',
+            'Create wireframes and prototypes',
+            'Perform usability testing'
+          ];
+          response.designPrinciples = [
+            'User-centered design',
+            'Visual hierarchy',
+            'Consistency and standards',
+            'Accessibility',
+            'Feedback and affordances'
+          ];
+          break;
+        case 'product manager':
+          response.recommendations = [
+            'Align features with user needs and business goals',
+            'Prioritize based on value and effort',
+            'Communicate clearly with stakeholders'
+          ];
+          response.nextSteps = [
+            'Define product vision and strategy',
+            'Create and prioritize backlog',
+            'Coordinate with development team'
+          ];
+          response.productStrategy = [
+            'Market analysis',
+            'User personas and journeys',
+            'Feature prioritization',
+            'Roadmap planning',
+            'Success metrics'
+          ];
+          break;
         default:
           response.recommendations = [
             'Analyze the problem thoroughly',

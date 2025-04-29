@@ -20,8 +20,8 @@ export declare class InMemoryRoleRepository implements IRoleRepository {
      */
     getRoleById(id: string): Promise<Role | null>;
     /**
-     * Gets a role by its name.
-     * @param name The role name
+     * Gets a role by its name or ID.
+     * @param name The role name or ID
      * @returns The role if found, null otherwise
      */
     getRoleByName(name: string): Promise<Role | null>;

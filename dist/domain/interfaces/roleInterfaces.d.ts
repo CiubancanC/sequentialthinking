@@ -1,6 +1,7 @@
 import { Role } from "../models/role.js";
 import { RoleResponse } from "../models/roleResponse.js";
 import { Scenario } from "../models/scenario.js";
+import { SequentialStep } from "../services/sequentialThinkingService.js";
 /**
  * Interface for role repository operations.
  */
@@ -78,4 +79,51 @@ export interface IRoleService {
      * @returns The scenario if found, null otherwise
      */
     getScenarioById(id: string): Promise<Scenario | null>;
+}
+/**
+ * Interface for automatic role selection service operations.
+ */
+export interface IAutomaticRoleService {
+    /**
+     * Automatically selects the most appropriate role based on the context.
+     * @param context The context or problem description
+     * @returns The selected role, or null if no appropriate role is found
+     */
+    selectRoleForContext(context: string): Promise<Role | null>;
+    /**
+     * Automatically selects the most appropriate scenario based on the context.
+     * @param context The context or problem description
+     * @returns The selected scenario, or null if no appropriate scenario is found
+     */
+    selectScenarioForContext(context: string): Promise<Scenario | null>;
+    /**
+     * Automatically selects the most appropriate role for a given scenario.
+     * @param scenarioId The ID of the scenario
+     * @returns The selected role, or null if no appropriate role is found
+     */
+    selectRoleForScenario(scenarioId: string): Promise<Role | null>;
+}
+/**
+ * Interface for sequential thinking service operations.
+ */
+export interface ISequentialThinkingService {
+    /**
+     * Creates a sequential thinking workflow based on a context.
+     * @param context The initial context or problem description
+     * @returns An array of sequential steps
+     */
+    createWorkflow(context: string): Promise<SequentialStep[]>;
+    /**
+     * Executes a step in a sequential thinking workflow.
+     * @param step The step to execute
+     * @param previousSteps The previous steps in the workflow
+     * @returns The updated step with output
+     */
+    executeStep(step: SequentialStep, previousSteps: SequentialStep[]): Promise<SequentialStep>;
+    /**
+     * Generates the next step in a sequential thinking workflow.
+     * @param steps The current steps in the workflow
+     * @returns The next step, or null if the workflow is complete
+     */
+    generateNextStep(steps: SequentialStep[]): Promise<SequentialStep | null>;
 }
