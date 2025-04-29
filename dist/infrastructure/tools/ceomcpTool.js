@@ -1,12 +1,10 @@
-import { Tool } from "@modelcontextprotocol/sdk/types.js";
-
 /**
  * Definition of the CEOMCP tool for the MCP server.
  * This tool allows clients to interact with the CEOMCP thinking process.
  */
-export const CEOMCP_TOOL: Tool = {
-  name: "ceomcp",
-  description: `A detailed tool for dynamic and reflective problem-solving using the CEOMCP approach.
+export const CEOMCP_TOOL = {
+    name: "ceomcp",
+    description: `A detailed tool for dynamic and reflective problem-solving using the CEOMCP approach.
 This tool helps analyze problems through a flexible thinking process that can adapt and evolve.
 Each thought can build on, question, or revise previous insights as understanding deepens.
 
@@ -60,50 +58,51 @@ You should:
 9. Repeat the process until satisfied with the solution
 10. Provide a single, ideally correct answer as the final output
 11. Only set next_thought_needed to false when truly done and a satisfactory answer is reached`,
-  inputSchema: {
-    type: "object",
-    properties: {
-      thought: {
-        type: "string",
-        description: "Your current thinking step"
-      },
-      nextThoughtNeeded: {
-        type: "boolean",
-        description: "Whether another thought step is needed"
-      },
-      thoughtNumber: {
-        type: "integer",
-        description: "Current thought number",
-        minimum: 1
-      },
-      totalThoughts: {
-        type: "integer",
-        description: "Estimated total thoughts needed",
-        minimum: 1
-      },
-      isRevision: {
-        type: "boolean",
-        description: "Whether this revises previous thinking"
-      },
-      revisesThought: {
-        type: "integer",
-        description: "Which thought is being reconsidered",
-        minimum: 1
-      },
-      branchFromThought: {
-        type: "integer",
-        description: "Branching point thought number",
-        minimum: 1
-      },
-      branchId: {
-        type: "string",
-        description: "Branch identifier"
-      },
-      needsMoreThoughts: {
-        type: "boolean",
-        description: "If more thoughts are needed"
-      }
-    },
-    required: ["thought", "nextThoughtNeeded", "thoughtNumber", "totalThoughts"]
-  }
+    inputSchema: {
+        type: "object",
+        properties: {
+            thought: {
+                type: "string",
+                description: "Your current thinking step"
+            },
+            nextThoughtNeeded: {
+                type: "boolean",
+                description: "Whether another thought step is needed"
+            },
+            thoughtNumber: {
+                type: "integer",
+                description: "Current thought number",
+                minimum: 1
+            },
+            totalThoughts: {
+                type: "integer",
+                description: "Estimated total thoughts needed",
+                minimum: 1
+            },
+            isRevision: {
+                type: "boolean",
+                description: "Whether this revises previous thinking"
+            },
+            revisesThought: {
+                type: "integer",
+                description: "Which thought is being reconsidered",
+                minimum: 1
+            },
+            branchFromThought: {
+                type: "integer",
+                description: "Branching point thought number",
+                minimum: 1
+            },
+            branchId: {
+                type: "string",
+                description: "Branch identifier"
+            },
+            needsMoreThoughts: {
+                type: "boolean",
+                description: "If more thoughts are needed"
+            }
+        },
+        required: ["thought", "nextThoughtNeeded", "thoughtNumber", "totalThoughts"]
+    }
 };
+//# sourceMappingURL=ceomcpTool.js.map

@@ -1,6 +1,6 @@
-# CEOMCP MCP Server
+# Hello World MCP Server
 
-An MCP server implementation that provides a tool for dynamic and reflective problem-solving using the CEOMCP approach.
+A simple MCP server implementation that provides a "Hello World" greeting tool. This server demonstrates the basic functionality of the MCP protocol while following CLEAN architecture principles.
 
 ## Architecture
 
@@ -41,38 +41,29 @@ Handles formatting and presenting data to users or external systems:
 
 ## Features
 
-- Break down complex problems into manageable steps
-- Revise and refine thoughts as understanding deepens
-- Branch into alternative paths of reasoning
-- Adjust the total number of thoughts dynamically
-- Generate and verify solution hypotheses
+- Simple "Hello World" greeting functionality
+- Customizable greeting message
+- Optional name parameter to personalize the greeting
+- Maintains a history of all greetings
+- Demonstrates CLEAN architecture principles in a minimal implementation
 
 ## Tool
 
-### ceomcp
+### helloworld
 
-Facilitates a detailed, step-by-step thinking process for problem-solving and analysis using the CEOMCP approach.
+A simple tool that provides a customizable "Hello World" greeting.
 
 **Inputs:**
-- `thought` (string): The current thinking step
-- `nextThoughtNeeded` (boolean): Whether another thought step is needed
-- `thoughtNumber` (integer): Current thought number
-- `totalThoughts` (integer): Estimated total thoughts needed
-- `isRevision` (boolean, optional): Whether this revises previous thinking
-- `revisesThought` (integer, optional): Which thought is being reconsidered
-- `branchFromThought` (integer, optional): Branching point thought number
-- `branchId` (string, optional): Branch identifier
-- `needsMoreThoughts` (boolean, optional): If more thoughts are needed
+- `message` (string): The greeting message to send (e.g., "Hello", "Hi", "Greetings")
+- `name` (string, optional): The name of the person to greet (defaults to "World" if not specified)
 
 ## Usage
 
-The CEOMCP tool is designed for:
-- Breaking down complex problems into steps
-- Planning and design with room for revision
-- Analysis that might need course correction
-- Problems where the full scope might not be clear initially
-- Tasks that need to maintain context over multiple steps
-- Situations where irrelevant information needs to be filtered out
+The Hello World tool is designed for:
+- Demonstrating the basic functionality of the MCP protocol
+- Learning how to implement a simple MCP server
+- Testing the connection between a client and the MCP server
+- Providing a template for more complex MCP implementations
 
 ## Configuration
 
@@ -85,11 +76,11 @@ Add this to your `claude_desktop_config.json`:
 ```json
 {
   "mcpServers": {
-    "ceomcp": {
+    "helloworld": {
       "command": "npx",
       "args": [
         "-y",
-        "@modelcontextprotocol/server-ceomcp"
+        "@modelcontextprotocol/server-helloworld"
       ]
     }
   }
@@ -101,13 +92,13 @@ Add this to your `claude_desktop_config.json`:
 ```json
 {
   "mcpServers": {
-    "ceomcp": {
+    "helloworld": {
       "command": "docker",
       "args": [
         "run",
         "--rm",
         "-i",
-        "mcp/ceomcp"
+        "mcp/helloworld"
       ]
     }
   }
@@ -115,12 +106,6 @@ Add this to your `claude_desktop_config.json`:
 ```
 
 ### Usage with VS Code
-
-For quick installation, click one of the installation buttons below...
-
-[![Install with NPX in VS Code](https://img.shields.io/badge/VS_Code-NPM-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=ceomcp&config=%7B%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22%40modelcontextprotocol%2Fserver-ceomcp%22%5D%7D) [![Install with NPX in VS Code Insiders](https://img.shields.io/badge/VS_Code_Insiders-NPM-24bfa5?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=ceomcp&config=%7B%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22%40modelcontextprotocol%2Fserver-ceomcp%22%5D%7D&quality=insiders)
-
-[![Install with Docker in VS Code](https://img.shields.io/badge/VS_Code-Docker-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=ceomcp&config=%7B%22command%22%3A%22docker%22%2C%22args%22%3A%5B%22run%22%2C%22--rm%22%2C%22-i%22%2C%22mcp%2Fceomcp%22%5D%7D) [![Install with Docker in VS Code Insiders](https://img.shields.io/badge/VS_Code_Insiders-Docker-24bfa5?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=ceomcp&config=%7B%22command%22%3A%22docker%22%2C%22args%22%3A%5B%22run%22%2C%22--rm%22%2C%22-i%22%2C%22mcp%2Fceomcp%22%5D%7D&quality=insiders)
 
 For manual installation, add the following JSON block to your User Settings (JSON) file in VS Code. You can do this by pressing `Ctrl + Shift + P` and typing `Preferences: Open Settings (JSON)`.
 
@@ -134,11 +119,11 @@ For NPX installation:
 {
   "mcp": {
     "servers": {
-      "ceomcp": {
+      "helloworld": {
         "command": "npx",
         "args": [
           "-y",
-          "@modelcontextprotocol/server-ceomcp"
+          "@modelcontextprotocol/server-helloworld"
         ]
       }
     }
@@ -152,13 +137,13 @@ For Docker installation:
 {
   "mcp": {
     "servers": {
-      "ceomcp": {
+      "helloworld": {
         "command": "docker",
         "args": [
           "run",
           "--rm",
           "-i",
-          "mcp/ceomcp"
+          "mcp/helloworld"
         ]
       }
     }
@@ -166,28 +151,23 @@ For Docker installation:
 }
 ```
 
-### Development Configuration (cline_mcp_settings.json)
+### Development Configuration
 
-For development purposes using the VS Code extension, you might use the following configuration in your `cline_mcp_settings.json` file (typically located in the extension's global storage):
+For development purposes, you can run the server directly from the source code:
 
-```json
-{
-  "ceomcp": {
-    "command": "docker",
-    "args": [
-      "run",
-      "-i",
-      "--rm",
-      "ceomcp-app"
-    ],
-    "disabled": false,
-    "autoApprove": [
-      "ceomcp"
-    ]
-  }
-}
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/hello-world-mcp.git
+
+# Navigate to the project directory
+cd hello-world-mcp
+
+# Install dependencies
+npm install
+
+# Start the server in development mode
+npm run dev
 ```
-Note the use of `ceomcp-app` as the image name, which should correspond to a local build
 
 ## Project Structure
 
