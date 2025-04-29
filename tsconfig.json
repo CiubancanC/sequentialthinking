@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "outDir": "./dist",
-    "rootDir": "./src/sequentialthinking", // Changed rootDir to be more specific
+    "rootDir": "./src/ceomcp", // Changed rootDir to be more specific
     "moduleResolution": "NodeNext",
     "module": "NodeNext"
   },

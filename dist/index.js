@@ -4,7 +4,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { CallToolRequestSchema, ListToolsRequestSchema, } from "@modelcontextprotocol/sdk/types.js";
 // Fixed chalk import for ESM
 import chalk from 'chalk';
-class SequentialThinkingServer {
+class CeomcpServer {
     thoughtHistory = [];
     branches = {};
     validateThoughtData(input) {
@@ -100,9 +100,9 @@ class SequentialThinkingServer {
         }
     }
 }
-const SEQUENTIAL_THINKING_TOOL = {
-    name: "sequentialthinking",
-    description: `A detailed tool for dynamic and reflective problem-solving through thoughts.
+const CEOMCP_TOOL = {
+    name: "ceomcp",
+    description: `A detailed tool for dynamic and reflective problem-solving using the CEOMCP approach.
 This tool helps analyze problems through a flexible thinking process that can adapt and evolve.
 Each thought can build on, question, or revise previous insights as understanding deepens.
 
@@ -204,19 +204,19 @@ You should:
     }
 };
 const server = new Server({
-    name: "sequential-thinking-server",
+    name: "ceomcp-server",
     version: "0.2.0",
 }, {
     capabilities: {
         tools: {},
     },
 });
-const thinkingServer = new SequentialThinkingServer();
+const thinkingServer = new CeomcpServer();
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
-    tools: [SEQUENTIAL_THINKING_TOOL],
+    tools: [CEOMCP_TOOL],
 }));
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
-    if (request.params.name === "sequentialthinking") {
+    if (request.params.name === "ceomcp") {
         return thinkingServer.processThought(request.params.arguments);
     }
     return {
@@ -230,7 +230,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 async function runServer() {
     const transport = new StdioServerTransport();
     await server.connect(transport);
-    console.error("Sequential Thinking MCP Server running on stdio");
+    console.error("CEOMCP MCP Server running on stdio");
     // Keep the process alive indefinitely using setInterval
     setInterval(() => { }, 1 << 30); // Run an empty function very infrequently
 }

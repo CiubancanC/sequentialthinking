@@ -1,6 +1,6 @@
-# Sequential Thinking MCP Server
+# CEOMCP MCP Server
 
-An MCP server implementation that provides a tool for dynamic and reflective problem-solving through a structured thinking process.
+An MCP server implementation that provides a tool for dynamic and reflective problem-solving using the CEOMCP approach.
 
 ## Features
 
@@ -12,9 +12,9 @@ An MCP server implementation that provides a tool for dynamic and reflective pro
 
 ## Tool
 
-### sequential_thinking
+### ceomcp
 
-Facilitates a detailed, step-by-step thinking process for problem-solving and analysis.
+Facilitates a detailed, step-by-step thinking process for problem-solving and analysis using the CEOMCP approach.
 
 **Inputs:**
 - `thought` (string): The current thinking step
@@ -29,7 +29,7 @@ Facilitates a detailed, step-by-step thinking process for problem-solving and an
 
 ## Usage
 
-The Sequential Thinking tool is designed for:
+The CEOMCP tool is designed for:
 - Breaking down complex problems into steps
 - Planning and design with room for revision
 - Analysis that might need course correction
@@ -48,11 +48,11 @@ Add this to your `claude_desktop_config.json`:
 ```json
 {
   "mcpServers": {
-    "sequential-thinking": {
+    "ceomcp": {
       "command": "npx",
       "args": [
         "-y",
-        "@modelcontextprotocol/server-sequential-thinking"
+        "@modelcontextprotocol/server-ceomcp"
       ]
     }
   }
@@ -64,13 +64,13 @@ Add this to your `claude_desktop_config.json`:
 ```json
 {
   "mcpServers": {
-    "sequentialthinking": {
+    "ceomcp": {
       "command": "docker",
       "args": [
         "run",
         "--rm",
         "-i",
-        "mcp/sequentialthinking"
+        "mcp/ceomcp"
       ]
     }
   }
@@ -81,9 +81,9 @@ Add this to your `claude_desktop_config.json`:
 
 For quick installation, click one of the installation buttons below...
 
-[![Install with NPX in VS Code](https://img.shields.io/badge/VS_Code-NPM-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=sequentialthinking&config=%7B%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22%40modelcontextprotocol%2Fserver-sequential-thinking%22%5D%7D) [![Install with NPX in VS Code Insiders](https://img.shields.io/badge/VS_Code_Insiders-NPM-24bfa5?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=sequentialthinking&config=%7B%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22%40modelcontextprotocol%2Fserver-sequential-thinking%22%5D%7D&quality=insiders)
+[![Install with NPX in VS Code](https://img.shields.io/badge/VS_Code-NPM-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=ceomcp&config=%7B%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22%40modelcontextprotocol%2Fserver-ceomcp%22%5D%7D) [![Install with NPX in VS Code Insiders](https://img.shields.io/badge/VS_Code_Insiders-NPM-24bfa5?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=ceomcp&config=%7B%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22%40modelcontextprotocol%2Fserver-ceomcp%22%5D%7D&quality=insiders)
 
-[![Install with Docker in VS Code](https://img.shields.io/badge/VS_Code-Docker-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=sequentialthinking&config=%7B%22command%22%3A%22docker%22%2C%22args%22%3A%5B%22run%22%2C%22--rm%22%2C%22-i%22%2C%22mcp%2Fsequentialthinking%22%5D%7D) [![Install with Docker in VS Code Insiders](https://img.shields.io/badge/VS_Code_Insiders-Docker-24bfa5?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=sequentialthinking&config=%7B%22command%22%3A%22docker%22%2C%22args%22%3A%5B%22run%22%2C%22--rm%22%2C%22-i%22%2C%22mcp%2Fsequentialthinking%22%5D%7D&quality=insiders)
+[![Install with Docker in VS Code](https://img.shields.io/badge/VS_Code-Docker-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=ceomcp&config=%7B%22command%22%3A%22docker%22%2C%22args%22%3A%5B%22run%22%2C%22--rm%22%2C%22-i%22%2C%22mcp%2Fceomcp%22%5D%7D) [![Install with Docker in VS Code Insiders](https://img.shields.io/badge/VS_Code_Insiders-Docker-24bfa5?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=ceomcp&config=%7B%22command%22%3A%22docker%22%2C%22args%22%3A%5B%22run%22%2C%22--rm%22%2C%22-i%22%2C%22mcp%2Fceomcp%22%5D%7D&quality=insiders)
 
 For manual installation, add the following JSON block to your User Settings (JSON) file in VS Code. You can do this by pressing `Ctrl + Shift + P` and typing `Preferences: Open Settings (JSON)`.
 
@@ -97,11 +97,11 @@ For NPX installation:
 {
   "mcp": {
     "servers": {
-      "sequential-thinking": {
+      "ceomcp": {
         "command": "npx",
         "args": [
           "-y",
-          "@modelcontextprotocol/server-sequential-thinking"
+          "@modelcontextprotocol/server-ceomcp"
         ]
       }
     }
@@ -115,13 +115,13 @@ For Docker installation:
 {
   "mcp": {
     "servers": {
-      "sequential-thinking": {
+      "ceomcp": {
         "command": "docker",
         "args": [
           "run",
           "--rm",
           "-i",
-          "mcp/sequentialthinking"
+          "mcp/ceomcp"
         ]
       }
     }
@@ -135,29 +135,29 @@ For development purposes using the VS Code extension, you might use the followin
 
 ```json
 {
-  "sequentialthinking": {
+  "ceomcp": {
     "command": "docker",
     "args": [
       "run",
       "-i",
       "--rm",
-      "sequentialthinking-app"
+      "ceomcp-app"
     ],
     "disabled": false,
     "autoApprove": [
-      "sequentialthinking"
+      "ceomcp"
     ]
   }
 }
 ```
-Note the use of `sequentialthinking-app` as the image name, which should correspond to a local build
+Note the use of `ceomcp-app` as the image name, which should correspond to a local build
 
 ## Building
 
 Docker:
 
 ```bash
-docker build -t mcp/sequentialthinking -f src/sequentialthinking/Dockerfile .
+docker build -t mcp/ceomcp -f src/ceomcp/Dockerfile .
 ```
 
 ## License
