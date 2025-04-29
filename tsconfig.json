@@ -1,9 +1,10 @@
 {
   "compilerOptions": {
     "outDir": "./dist",
-    "rootDir": "./src/ceomcp", // Changed rootDir to be more specific
+    "rootDir": "./src/ceomcp/src",
     "moduleResolution": "NodeNext",
     "module": "NodeNext"
   },
-  "include": ["./**/*.ts"]
+  "include": ["./**/*.ts"],
+  "exclude": ["./src/ceomcp/tests", "./src/ceomcp/vitest.config.ts"]
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { CeomcpProcessor } from './CeomcpProcessor.js';
+import { CeomcpProcessor } from '../src/CeomcpProcessor.js';
 
 describe('CeomcpProcessor', () => {
   it('should create a CeomcpProcessor instance', () => {
