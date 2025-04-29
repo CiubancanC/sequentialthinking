@@ -1,4 +1,4 @@
-import { Thought } from '../models/thought';
+import { Thought } from '../models/thought.js';
 
 /**
  * Repository interface for storing and retrieving thoughts.

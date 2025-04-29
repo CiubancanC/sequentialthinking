@@ -1,5 +1,5 @@
-import { Thought } from '../../domain/models/thought';
-import { ThoughtRepository } from '../../domain/interfaces';
+import { Thought } from '../../domain/models/thought.js';
+import { ThoughtRepository } from '../../domain/interfaces/index.js';
 
 /**
  * In-memory implementation of the ThoughtRepository interface.

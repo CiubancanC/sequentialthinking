@@ -1,5 +1,5 @@
 import chalk from 'chalk';
-import { Thought } from '../../domain/models/thought';
+import { Thought } from '../../domain/models/thought.js';
 
 /**
  * Formats a thought for display in the console.

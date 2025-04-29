@@ -1,5 +1,5 @@
-import { Thought } from '../models/thought';
-import { ThoughtRepository, ThoughtService } from '../interfaces';
+import { Thought } from '../models/thought.js';
+import { ThoughtRepository, ThoughtService } from '../interfaces/index.js';
 
 /**
  * Implementation of the ThoughtService interface.

@@ -1,5 +1,5 @@
-import { ThoughtService } from '../../domain/interfaces';
-import { ThoughtInputDto, ThoughtOutputDto, ErrorOutputDto } from '../dtos/thoughtDto';
+import { ThoughtService } from '../../domain/interfaces/index.js';
+import { ThoughtInputDto, ThoughtOutputDto, ErrorOutputDto } from '../dtos/thoughtDto.js';
 
 /**
  * Use case for processing a thought.
