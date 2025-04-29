@@ -1,0 +1,159 @@
+import { IRoleRepository } from "../interfaces/roleInterfaces.js";
+import { Role } from "../models/role.js";
+import { Scenario } from "../models/scenario.js";
+
+/**
+ * Interface for the automatic role selection service.
+ */
+export interface IAutomaticRoleService {
+  /**
+   * Automatically selects the most appropriate role based on the context.
+   * @param context The context or problem description
+   * @returns The selected role, or null if no appropriate role is found
+   */
+  selectRoleForContext(context: string): Promise<Role | null>;
+
+  /**
+   * Automatically selects the most appropriate scenario based on the context.
+   * @param context The context or problem description
+   * @returns The selected scenario, or null if no appropriate scenario is found
+   */
+  selectScenarioForContext(context: string): Promise<Scenario | null>;
+
+  /**
+   * Automatically selects the most appropriate role for a given scenario.
+   * @param scenarioId The ID of the scenario
+   * @returns The selected role, or null if no appropriate role is found
+   */
+  selectRoleForScenario(scenarioId: string): Promise<Role | null>;
+}
+
+/**
+ * Implementation of the automatic role selection service.
+ * This service analyzes context and automatically selects appropriate roles and scenarios.
+ */
+export class AutomaticRoleServiceImpl implements IAutomaticRoleService {
+  /**
+   * Creates a new AutomaticRoleServiceImpl instance.
+   * @param repository The role repository to use
+   */
+  constructor(private readonly repository: IRoleRepository) {}
+
+  /**
+   * Automatically selects the most appropriate role based on the context.
+   * @param context The context or problem description
+   * @returns The selected role, or null if no appropriate role is found
+   */
+  async selectRoleForContext(context: string): Promise<Role | null> {
+    // Get all available roles
+    const roles = await this.repository.getAllRoles();
+    
+    // If no roles are available, return null
+    if (!roles || roles.length === 0) {
+      return null;
+    }
+
+    // Simple keyword-based matching for now
+    // This could be enhanced with more sophisticated NLP techniques
+    const contextLower = context.toLowerCase();
+    
+    // Define keywords for each role
+    const roleKeywords: Record<string, string[]> = {
+      'architect': ['architecture', 'design', 'system', 'structure', 'scalable', 'microservice'],
+      'senior developer': ['code', 'implement', 'develop', 'programming', 'function', 'class', 'method'],
+      'qa engineer': ['test', 'quality', 'bug', 'issue', 'verify', 'validation', 'testing'],
+      'devops engineer': ['deploy', 'pipeline', 'ci/cd', 'infrastructure', 'container', 'docker', 'kubernetes']
+    };
+
+    // Score each role based on keyword matches
+    const roleScores = roles.map(role => {
+      const roleName = role.name.toLowerCase();
+      const keywords = roleKeywords[roleName] || [];
+      
+      // Count how many keywords match
+      const score = keywords.reduce((count, keyword) => {
+        return count + (contextLower.includes(keyword) ? 1 : 0);
+      }, 0);
+      
+      return { role, score };
+    });
+
+    // Sort roles by score (descending)
+    roleScores.sort((a, b) => b.score - a.score);
+
+    // Return the highest-scoring role, or null if no role scored above 0
+    return roleScores.length > 0 && roleScores[0].score > 0 ? roleScores[0].role : null;
+  }
+
+  /**
+   * Automatically selects the most appropriate scenario based on the context.
+   * @param context The context or problem description
+   * @returns The selected scenario, or null if no appropriate scenario is found
+   */
+  async selectScenarioForContext(context: string): Promise<Scenario | null> {
+    // Get all available scenarios
+    const scenarios = await this.repository.getAllScenarios();
+    
+    // If no scenarios are available, return null
+    if (!scenarios || scenarios.length === 0) {
+      return null;
+    }
+
+    // Simple keyword-based matching for now
+    const contextLower = context.toLowerCase();
+    
+    // Score each scenario based on title and description matches
+    const scenarioScores = scenarios.map(scenario => {
+      const titleLower = scenario.title.toLowerCase();
+      const descriptionLower = scenario.description.toLowerCase();
+      
+      // Check if context contains words from title or description
+      const titleWords = titleLower.split(/\s+/).filter(word => word.length > 3);
+      const descriptionWords = descriptionLower.split(/\s+/).filter(word => word.length > 3);
+      
+      // Count matches in title (weighted higher) and description
+      const titleScore = titleWords.reduce((count, word) => {
+        return count + (contextLower.includes(word) ? 2 : 0);
+      }, 0);
+      
+      const descriptionScore = descriptionWords.reduce((count, word) => {
+        return count + (contextLower.includes(word) ? 1 : 0);
+      }, 0);
+      
+      return { scenario, score: titleScore + descriptionScore };
+    });
+
+    // Sort scenarios by score (descending)
+    scenarioScores.sort((a, b) => b.score - a.score);
+
+    // Return the highest-scoring scenario, or null if no scenario scored above 0
+    return scenarioScores.length > 0 && scenarioScores[0].score > 0 ? scenarioScores[0].scenario : null;
+  }
+
+  /**
+   * Automatically selects the most appropriate role for a given scenario.
+   * @param scenarioId The ID of the scenario
+   * @returns The selected role, or null if no appropriate role is found
+   */
+  async selectRoleForScenario(scenarioId: string): Promise<Role | null> {
+    // Get the scenario
+    const scenario = await this.repository.getScenarioById(scenarioId);
+    
+    // If the scenario doesn't exist, return null
+    if (!scenario) {
+      return null;
+    }
+
+    // Get the suggested roles for the scenario
+    const suggestedRoles = scenario.suggestedRoles;
+    
+    // If there are no suggested roles, return null
+    if (!suggestedRoles || suggestedRoles.length === 0) {
+      return null;
+    }
+
+    // Try to get the first suggested role
+    const roleName = suggestedRoles[0];
+    return this.repository.getRoleByName(roleName);
+  }
+}
