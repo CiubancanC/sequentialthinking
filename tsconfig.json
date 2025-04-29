@@ -1,8 +1,7 @@
 {
-  "extends": "../../tsconfig.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "rootDir": ".",
+    "rootDir": "./src/sequentialthinking", // Changed rootDir to be more specific
     "moduleResolution": "NodeNext",
     "module": "NodeNext"
   },

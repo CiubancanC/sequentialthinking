@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    # The ENTRYPOINT in the Dockerfile now handles running the application.
+    # Volumes are removed as the release stage copies the necessary code.
+    # Working directory is set in the Dockerfile.
+    # Ports are removed as the MCP server runs on stdio, not a network port.

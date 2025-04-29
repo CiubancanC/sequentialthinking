@@ -231,6 +231,8 @@ async function runServer() {
     const transport = new StdioServerTransport();
     await server.connect(transport);
     console.error("Sequential Thinking MCP Server running on stdio");
+    // Keep the process alive indefinitely using setInterval
+    setInterval(() => { }, 1 << 30); // Run an empty function very infrequently
 }
 runServer().catch((error) => {
     console.error("Fatal error running server:", error);
