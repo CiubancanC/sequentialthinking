@@ -9,52 +9,64 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 // Fixed chalk import for ESM
 import chalk from 'chalk';
+import { z } from 'zod';
 
-interface ThoughtData {
-  thought: string;
-  thoughtNumber: number;
-  totalThoughts: number;
-  isRevision?: boolean;
-  revisesThought?: number;
-  branchFromThought?: number;
-  branchId?: string;
-  needsMoreThoughts?: boolean;
-  nextThoughtNeeded: boolean;
-}
+/**
+ * Zod schema for validating the structure of a thought data object.
+ * Ensures that the thought, thoughtNumber, totalThoughts, and nextThoughtNeeded properties are present and of the correct type.
+ */
+const ThoughtDataSchema = z.object({
+  thought: z.string().min(1, { message: "Thought must be at least 1 character" }),
+  thoughtNumber: z.number().int().positive(),
+  totalThoughts: z.number().int().positive(),
+  nextThoughtNeeded: z.boolean(),
+  isRevision: z.boolean().optional(),
+  revisesThought: z.number().int().positive().optional(),
+  branchFromThought: z.number().int().positive().optional(),
+  branchId: z.string().optional(),
+  needsMoreThoughts: z.boolean().optional(),
+});
 
-class CeomcpServer {
+/**
+ * Represents the data structure for a single thought in the CEOMCP process.
+ */
+type ThoughtData = z.infer<typeof ThoughtDataSchema>;
+
+/**
+ * Manages the state and processing logic for the CEOMCP thinking process.
+ */
+export class CeomcpServer {
+  /**
+   * Stores the history of thoughts processed by the server.
+   */
   private thoughtHistory: ThoughtData[] = [];
+  /**
+   * Stores any branched lines of reasoning, keyed by a branch ID.
+   */
   private branches: Record<string, ThoughtData[]> = {};
 
-  private validateThoughtData(input: unknown): ThoughtData {
-    const data = input as Record<string, unknown>;
-
-    if (!data.thought || typeof data.thought !== 'string') {
-      throw new Error('Invalid thought: must be a string');
+  /**
+   * Validates the structure of a thought data object using the Zod schema.
+   * @param input The input to validate.
+   * @returns The validated thought data.
+   * @throws Error if the input is invalid, with a message describing the validation error.
+   */
+  public validateThoughtData(input: unknown): ThoughtData {
+    try {
+      return ThoughtDataSchema.parse(input);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        throw new Error(`Validation error: ${error.errors.map(e => e.message).join(', ')}`);
+      }
+      throw error;
     }
-    if (!data.thoughtNumber || typeof data.thoughtNumber !== 'number') {
-      throw new Error('Invalid thoughtNumber: must be a number');
-    }
-    if (!data.totalThoughts || typeof data.totalThoughts !== 'number') {
-      throw new Error('Invalid totalThoughts: must be a number');
-    }
-    if (typeof data.nextThoughtNeeded !== 'boolean') {
-      throw new Error('Invalid nextThoughtNeeded: must be a boolean');
-    }
-
-    return {
-      thought: data.thought,
-      thoughtNumber: data.thoughtNumber,
-      totalThoughts: data.totalThoughts,
-      nextThoughtNeeded: data.nextThoughtNeeded,
-      isRevision: data.isRevision as boolean | undefined,
-      revisesThought: data.revisesThought as number | undefined,
-      branchFromThought: data.branchFromThought as number | undefined,
-      branchId: data.branchId as string | undefined,
-      needsMoreThoughts: data.needsMoreThoughts as boolean | undefined,
-    };
   }
 
+  /**
+   * Formats a thought data object into a string for logging to the console.
+   * @param thoughtData The thought data to format.
+   * @returns A formatted string representing the thought.
+   */
   private formatThought(thoughtData: ThoughtData): string {
     const { thoughtNumber, totalThoughts, thought, isRevision, revisesThought, branchFromThought, branchId } = thoughtData;
 
@@ -83,6 +95,11 @@ class CeomcpServer {
 └${border}┘`;
   }
 
+  /**
+   * Processes a thought by validating it, adding it to the history, and formatting it for output.
+   * @param input The input to process.
+   * @returns An object containing the processed thought data as a JSON string.
+   */
   public processThought(input: unknown): { content: Array<{ type: string; text: string }>; isError?: boolean } {
     try {
       const validatedInput = this.validateThoughtData(input);
@@ -267,11 +284,15 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 });
 
 async function runServer() {
+  console.error("CEOMCP MCP Server: Starting runServer function");
   const transport = new StdioServerTransport();
   await server.connect(transport);
   console.error("CEOMCP MCP Server running on stdio");
-  // Keep the process alive indefinitely using setInterval
-  setInterval(() => {}, 1 << 30); // Run an empty function very infrequently
+  // Keep the process alive indefinitely
+  while (true) {
+    await new Promise(resolve => setTimeout(resolve, 1000));
+  }
+  console.error("CEOMCP MCP Server: runServer function finished");
 }
 
 runServer().catch((error) => {
