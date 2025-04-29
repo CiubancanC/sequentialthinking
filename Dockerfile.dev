@@ -1,0 +1,25 @@
+FROM node:slim
+
+WORKDIR /app
+
+# Copy package files
+COPY package.json ./
+# If package-lock.json exists, copy it too
+# COPY package-lock.json ./
+
+# Install all dependencies (including devDependencies)
+RUN npm install
+
+# Copy tsconfig.json
+COPY tsconfig.json ./
+
+# Create dist directory
+RUN mkdir -p dist
+
+# We'll mount the src directory as a volume in docker-compose.yml
+
+# Expose port if needed (though MCP server uses stdio)
+# EXPOSE 3000
+
+# The command will be specified in docker-compose.yml
+CMD ["npm", "run", "dev"]
