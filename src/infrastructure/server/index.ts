@@ -14,6 +14,8 @@ export function main(): void {
 }
 
 // If this file is run directly, start the server
-if (require.main === module) {
+// In ES modules, we can check if this is the main module by comparing import.meta.url
+// against the process.argv[1] converted to URL format
+if (import.meta.url === `file://${process.argv[1]}`) {
   main();
 }
