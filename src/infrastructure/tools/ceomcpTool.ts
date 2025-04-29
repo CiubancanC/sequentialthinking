@@ -1,5 +1,9 @@
 import { Tool } from "@modelcontextprotocol/sdk/types.js";
 
+/**
+ * Definition of the CEOMCP tool for the MCP server.
+ * This tool allows clients to interact with the CEOMCP thinking process.
+ */
 export const CEOMCP_TOOL: Tool = {
   name: "ceomcp",
   description: `A detailed tool for dynamic and reflective problem-solving using the CEOMCP approach.

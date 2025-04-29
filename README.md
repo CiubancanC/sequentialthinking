@@ -2,6 +2,43 @@
 
 An MCP server implementation that provides a tool for dynamic and reflective problem-solving using the CEOMCP approach.
 
+## Architecture
+
+This project follows CLEAN architecture principles to ensure maintainability, testability, and scalability. The codebase is organized into the following layers:
+
+### Domain Layer
+
+The core business logic and entities of the application. This layer is independent of any external concerns and contains:
+
+- **Models**: Core business entities and value objects
+- **Interfaces**: Contracts that define how the domain interacts with other layers
+- **Services**: Domain-specific business logic that operates on multiple entities
+
+### Application Layer
+
+Coordinates the flow of data between the domain layer and the external world. It:
+
+- Implements use cases that represent application-specific business rules
+- Orchestrates the flow of data to and from domain entities
+- Defines DTOs (Data Transfer Objects) for communication with external layers
+
+### Infrastructure Layer
+
+Provides concrete implementations for interfaces defined in the domain layer and handles external concerns:
+
+- External services and APIs
+- Databases and data access
+- Frameworks and libraries
+- Server and network communication
+
+### Presentation Layer
+
+Handles formatting and presenting data to users or external systems:
+
+- Formatting output data for display
+- Converting application data to presentation formats
+- Handling presentation-specific logic
+
 ## Features
 
 - Break down complex problems into manageable steps
@@ -152,12 +189,51 @@ For development purposes using the VS Code extension, you might use the followin
 ```
 Note the use of `ceomcp-app` as the image name, which should correspond to a local build
 
+## Project Structure
+
+```
+src/
+├── domain/                 # Core business logic and entities
+│   ├── models/             # Domain models and entities
+│   ├── interfaces/         # Interfaces for repositories and services
+│   └── services/           # Domain services
+├── application/            # Application use cases
+│   ├── useCases/           # Use cases/interactors
+│   └── dtos/               # Data Transfer Objects
+├── infrastructure/         # External concerns (frameworks, DB, etc.)
+│   ├── server/             # Server implementation
+│   ├── validation/         # Validation logic
+│   ├── repositories/       # Repository implementations
+│   └── tools/              # Tool definitions
+├── presentation/           # Presentation logic
+│   └── formatters/         # Output formatters
+└── utils/                  # Utility functions
+tests/                      # Test files mirroring src structure
+config/                     # Configuration files
+```
+
 ## Building
 
 Docker:
 
 ```bash
 docker build -t mcp/ceomcp -f src/ceomcp/Dockerfile .
+```
+
+## Development
+
+```bash
+# Install dependencies
+pnpm install
+
+# Build the project
+pnpm build
+
+# Run tests
+pnpm test
+
+# Start the server in development mode (with auto-reload)
+pnpm dev
 ```
 
 ## License

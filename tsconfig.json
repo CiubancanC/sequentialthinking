@@ -1,10 +1,17 @@
 {
   "compilerOptions": {
     "outDir": "./dist",
-    "rootDir": "./src/ceomcp/src",
+    "rootDir": "./src",
     "moduleResolution": "NodeNext",
-    "module": "NodeNext"
+    "module": "NodeNext",
+    "target": "ES2022",
+    "esModuleInterop": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "declaration": true,
+    "sourceMap": true
   },
-  "include": ["./**/*.ts"],
-  "exclude": ["./src/ceomcp/tests", "./src/ceomcp/vitest.config.ts"]
+  "include": ["./src/**/*.ts"],
+  "exclude": ["./tests", "./src/**/*.test.ts", "./vitest.config.ts"]
 }

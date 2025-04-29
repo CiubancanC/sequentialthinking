@@ -17,6 +17,23 @@ export const ThoughtDataSchema = z.object({
 });
 
 /**
- * Represents the data structure for a single thought in the CEOMCP process.
+ * Type definition for the data structure validated by ThoughtDataSchema.
  */
 export type ThoughtData = z.infer<typeof ThoughtDataSchema>;
+
+/**
+ * Validates the structure of a thought data object using the Zod schema.
+ * @param input The input to validate.
+ * @returns The validated thought data.
+ * @throws Error if the input is invalid, with a message describing the validation error.
+ */
+export function validateThoughtData(input: unknown): ThoughtData {
+  try {
+    return ThoughtDataSchema.parse(input);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      throw new Error(`Validation error: ${error.errors.map(e => e.message).join(', ')}`);
+    }
+    throw error;
+  }
+}
