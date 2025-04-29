@@ -1,14 +1,14 @@
 import { describe, it, expect } from 'vitest';
-import { CeomcpServer } from './index.js';
+import { CeomcpProcessor } from './CeomcpProcessor.js';
 
-describe('CeomcpServer', () => {
-  it('should create a CeomcpServer instance', () => {
-    const server = new CeomcpServer();
-    expect(server).toBeInstanceOf(CeomcpServer);
+describe('CeomcpProcessor', () => {
+  it('should create a CeomcpProcessor instance', () => {
+    const processor = new CeomcpProcessor();
+    expect(processor).toBeInstanceOf(CeomcpProcessor);
   });
 
   it('should throw an error when validateThoughtData is given invalid input', () => {
-    const server = new CeomcpServer();
-    expect(() => server.validateThoughtData({ thought: 123, thoughtNumber: 'abc', totalThoughts: null, nextThoughtNeeded: 'maybe' })).toThrowError();
+    const processor = new CeomcpProcessor();
+    expect(() => processor.validateThoughtData({ thought: 123, thoughtNumber: 'abc', totalThoughts: null, nextThoughtNeeded: 'maybe' })).toThrowError();
   });
 });
