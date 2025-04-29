@@ -5,3 +5,20 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    # Development specific overrides:
+    volumes:
+      - ./src:/app/src
+      - ./package.json:/app/package.json
+      - ./pnpm-lock.yaml:/app/pnpm-lock.yaml # Or package-lock.json if used
+      - ./tsconfig.json:/app/tsconfig.json
+      # Use an anonymous volume for node_modules
+      - /app/node_modules 
+    # Command to install all deps and run the dev script
+    command: sh -c "npm install && npm run dev" 
+    # Override the Dockerfile entrypoint for development
+    entrypoint: [] 
+    environment:
+      - NODE_ENV=development
+    # If your app needs a port exposed for development:
+    # ports:
+    #   - "YOUR_LOCAL_PORT:CONTAINER_PORT"
