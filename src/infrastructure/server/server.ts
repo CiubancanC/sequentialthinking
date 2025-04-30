@@ -3,14 +3,15 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod";
 
 import { ProcessRolePromptUseCase } from "../../application/useCases/processRolePrompt.js";
-import { RoleServiceImpl } from "../../domain/services/roleService.js";
-import { InMemoryRoleRepository } from "../repositories/roleRepository.js";
+import { IRoleService } from "../../domain/interfaces/roleInterfaces.js";
 import { ROLE_PROMPT_TOOL } from "../tools/rolePromptTool.js";
 import { validateRolePromptData } from "../validation/rolePromptSchemas.js";
 import { RolePromptFormatter } from "../../presentation/formatters/rolePromptFormatter.js";
 import { Logger } from "../../utils/logger.js";
 import { config } from "../../config/index.js";
 import { createErrorResponse } from "../../utils/errors.js";
+import { container } from "../di/index.js";
+import { DI_TOKENS } from "../di/registry.js";
 
 /**
  * Creates and configures the MCP server.
@@ -26,12 +27,9 @@ export function createServer(): McpServer {
       version: config.server.version,
     });
 
-    // Set up the domain and application layers
-    const roleRepository = new InMemoryRoleRepository();
-    const roleService = new RoleServiceImpl(roleRepository);
-
-    // Set up the use cases
-    const processRolePromptUseCase = new ProcessRolePromptUseCase(roleService);
+    // Get dependencies from the container
+    const roleService = container.resolve<IRoleService>(DI_TOKENS.ROLE_SERVICE);
+    const processRolePromptUseCase = container.resolve<ProcessRolePromptUseCase>(DI_TOKENS.PROCESS_ROLE_PROMPT_USE_CASE);
 
     Logger.debug("Adding rolePrompt tool");
 

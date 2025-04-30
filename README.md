@@ -48,6 +48,7 @@ Handles formatting and presenting data to users or external systems:
 - Early detection and prevention of bugs
 - Ensures readable and maintainable architecture
 - Professional-level expertise in each role
+- Dependency injection system for better testability and maintainability
 
 ## Tools
 
@@ -187,7 +188,8 @@ src/
 │   ├── server/             # Server implementation
 │   ├── validation/         # Validation logic
 │   ├── repositories/       # Repository implementations
-│   └── tools/              # Tool definitions
+│   ├── tools/              # Tool definitions
+│   └── di/                 # Dependency injection system
 ├── presentation/           # Presentation logic
 │   └── formatters/         # Output formatters
 └── utils/                  # Utility functions
@@ -250,6 +252,58 @@ npm test
 
 # Start the server in development mode (with auto-reload)
 npm run dev
+```
+
+## Dependency Injection System
+
+The project uses a lightweight dependency injection (DI) system to manage dependencies and improve testability. The DI system is located in the `src/infrastructure/di` directory.
+
+### Key Components
+
+- **DIContainer**: The main container that manages dependency registration and resolution
+- **Lifetime Management**: Support for singleton and transient dependencies
+- **Centralized Registration**: All dependencies are registered in a single place
+
+### Usage
+
+Dependencies are registered in the `registry.ts` file:
+
+```typescript
+// Register a singleton dependency
+container.register<IRoleRepository>(
+  DI_TOKENS.ROLE_REPOSITORY,
+  () => new InMemoryRoleRepository(),
+  { lifetime: Lifetime.SINGLETON }
+);
+
+// Register a dependency that depends on another
+container.register<IRoleService>(
+  DI_TOKENS.ROLE_SERVICE,
+  (c) => new RoleServiceImpl(c.resolve(DI_TOKENS.ROLE_REPOSITORY)),
+  { lifetime: Lifetime.SINGLETON }
+);
+```
+
+Dependencies can be resolved from the container:
+
+```typescript
+// Get the role service
+const roleService = container.resolve<IRoleService>(DI_TOKENS.ROLE_SERVICE);
+```
+
+### Testing with DI
+
+For testing, you can register mock implementations:
+
+```typescript
+// Clear existing registrations
+container.clear();
+
+// Register mock implementations
+container.register<IRoleRepository>(
+  DI_TOKENS.ROLE_REPOSITORY,
+  () => mockRoleRepository
+);
 ```
 
 ## Example Usage

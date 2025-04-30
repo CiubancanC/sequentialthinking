@@ -10,6 +10,11 @@ try {
   // Now try to import the logger
   const { Logger } = await import('./utils/logger.js');
 
+  // Initialize the dependency injection container
+  const { initializeDI } = await import('./infrastructure/di/registry.js');
+  initializeDI();
+  Logger.info("Dependency injection container initialized");
+
   // Start the server with error handling
   try {
     Logger.info("Starting Fidora Server");

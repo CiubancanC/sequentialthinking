@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   ListToolsRequestSchema,
   CallToolRequestSchema,
@@ -6,7 +6,11 @@ import {
 import { ROLE_PROMPT_TOOL } from '../../../src/infrastructure/tools/rolePromptTool';
 import { RolePromptFormatter } from '../../../src/presentation/formatters/rolePromptFormatter';
 import { Role } from '../../../src/domain/models/role';
-import * as rolePromptSchemas from '../../../src/infrastructure/validation/rolePromptSchemas'; // Import the module
+import * as rolePromptSchemas from '../../../src/infrastructure/validation/rolePromptSchemas';
+import { container, DIContainerImpl, Lifetime } from '../../../src/infrastructure/di/index.js';
+import { DI_TOKENS } from '../../../src/infrastructure/di/registry.js';
+import { ProcessRolePromptUseCase } from '../../../src/application/useCases/processRolePrompt.js';
+import { IRoleService } from '../../../src/domain/interfaces/roleInterfaces.js';
 
 // Mock dependencies
 const mockProcessRolePromptUseCase = {
@@ -17,18 +21,27 @@ const mockRoleService = {
   getRoleByName: vi.fn(),
 };
 
-// Mock the modules that create dependencies
-vi.mock('../../../src/application/useCases/processRolePrompt', () => ({
-  ProcessRolePromptUseCase: vi.fn(() => mockProcessRolePromptUseCase),
-}));
-
-vi.mock('../../../src/domain/services/roleService', () => ({
-  RoleServiceImpl: vi.fn(() => mockRoleService),
-}));
-
-vi.mock('../../../src/infrastructure/repositories/roleRepository', () => ({
-  InMemoryRoleRepository: vi.fn(() => ({})), // Mock the repository as it's used by RoleServiceImpl
-}));
+// Mock the DI container
+vi.mock('../../../src/infrastructure/di/index.js', async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    container: {
+      resolve: vi.fn((token) => {
+        if (token === DI_TOKENS.PROCESS_ROLE_PROMPT_USE_CASE) {
+          return mockProcessRolePromptUseCase;
+        }
+        if (token === DI_TOKENS.ROLE_SERVICE) {
+          return mockRoleService;
+        }
+        throw new Error(`Unexpected token: ${token}`);
+      }),
+      register: vi.fn(),
+      has: vi.fn(),
+      clear: vi.fn(),
+    },
+  };
+});
 
 // Mock the validation module and provide a mock implementation for validateRolePromptData
 vi.mock('../../../src/infrastructure/validation/rolePromptSchemas', async (importOriginal) => {
