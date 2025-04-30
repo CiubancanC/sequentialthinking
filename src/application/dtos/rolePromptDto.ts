@@ -96,4 +96,9 @@ export interface RolePromptResponseDto {
    * Status of the response.
    */
   status: 'success' | 'failed';
+
+  /**
+   * The ID of the ticket in the agile processing system.
+   */
+  ticketId?: string;
 }

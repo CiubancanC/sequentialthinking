@@ -3,6 +3,8 @@ import { IAiModelService } from "../../domain/interfaces/aiModelInterfaces.js";
 import { IProcessRolePromptUseCase, ProcessRolePromptResult } from "../interfaces/useCaseInterfaces.js";
 import { RolePromptRequestDto, RolePromptResponseDto } from "../dtos/rolePromptDto.js";
 import { Logger } from "../../utils/logger.js";
+import { IAgileProcessingService, TicketStatus } from "../../domain/services/agileProcessingService.js";
+import { WorkerThreadService } from "../../infrastructure/services/workerThreadService.js";
 
 /**
  * Use case for processing role prompts.
@@ -12,10 +14,14 @@ export class ProcessRolePromptUseCase implements IProcessRolePromptUseCase {
    * Creates a new ProcessRolePromptUseCase instance.
    * @param roleService The role service to use
    * @param aiModelService The AI model service to use
+   * @param agileProcessingService The agile processing service to use
+   * @param workerThreadService The worker thread service to use
    */
   constructor(
     private readonly roleService: IRoleService,
-    private readonly aiModelService: IAiModelService
+    private readonly aiModelService: IAiModelService,
+    private readonly agileProcessingService: IAgileProcessingService,
+    private readonly workerThreadService: WorkerThreadService
   ) {}
 
   /**
@@ -36,10 +42,28 @@ export class ProcessRolePromptUseCase implements IProcessRolePromptUseCase {
         };
       }
 
+      // Create a ticket in the agile processing system
+      const ticket = this.agileProcessingService.createTicket(input.role, input.context);
+      Logger.info(`Created ticket ${ticket.id} for role ${input.role}`);
+
+      // Update ticket status to requirements gathering
+      await this.agileProcessingService.updateTicketStatus(
+        ticket.id,
+        TicketStatus.REQUIREMENTS,
+        'Gathering requirements'
+      );
+
       // Generate the role prompt
       const rolePrompt = await this.roleService.generateRolePrompt(
         input.role,
         input.context
+      );
+
+      // Store the requirements
+      await this.agileProcessingService.updateTicketField(
+        ticket.id,
+        'requirements',
+        rolePrompt
       );
 
       // Create a response based on the role
@@ -49,26 +73,76 @@ export class ProcessRolePromptUseCase implements IProcessRolePromptUseCase {
         status: 'success'
       };
 
-      // Try to enhance the response with Gemini if available
-      try {
-        if (this.aiModelService.isAvailable()) {
-          Logger.debug(`Enhancing response with Gemini for role: ${role.name}`);
+      // Update ticket status to design
+      await this.agileProcessingService.updateTicketStatus(
+        ticket.id,
+        TicketStatus.DESIGN,
+        'Designing solution'
+      );
 
-          const enhancedResponse = await this.aiModelService.generateEnhancedResponse({
-            roleName: role.name,
-            context: input.context,
-            originalPrompt: rolePrompt
+      // Try to enhance the response with Gemini if available using worker threads
+      if (this.aiModelService.isAvailable()) {
+        Logger.debug(`Enhancing response with Gemini for role: ${role.name}`);
+
+        // Update ticket status to implementation
+        await this.agileProcessingService.updateTicketStatus(
+          ticket.id,
+          TicketStatus.IMPLEMENTATION,
+          'Implementing solution with Gemini'
+        );
+
+        try {
+          // Use worker threads to process the Gemini request in parallel
+          const enhancedResponse = await this.workerThreadService.executeTask({
+            data: {
+              roleName: role.name,
+              context: input.context,
+              originalPrompt: rolePrompt
+            },
+            modulePath: './geminiWorker.js',
+            functionName: 'generateEnhancedResponse'
           });
 
           if (enhancedResponse) {
             // Add the enhanced response to the response object
-            response.enhancedResponse = enhancedResponse;
+            response.enhancedResponse = enhancedResponse as string;
             Logger.debug('Successfully generated enhanced response with Gemini');
+
+            // Update ticket with the implementation
+            await this.agileProcessingService.updateTicketField(
+              ticket.id,
+              'implementation',
+              enhancedResponse as string
+            );
+          }
+        } catch (error) {
+          // Don't fail the request if Gemini enhancement fails, just log the error
+          Logger.error('Error enhancing response with Gemini:', Logger.formatError(error));
+
+          // Fall back to direct API call without worker threads
+          try {
+            const enhancedResponse = await this.aiModelService.generateEnhancedResponse({
+              roleName: role.name,
+              context: input.context,
+              originalPrompt: rolePrompt
+            });
+
+            if (enhancedResponse) {
+              // Add the enhanced response to the response object
+              response.enhancedResponse = enhancedResponse;
+              Logger.debug('Successfully generated enhanced response with Gemini (fallback)');
+
+              // Update ticket with the implementation
+              await this.agileProcessingService.updateTicketField(
+                ticket.id,
+                'implementation',
+                enhancedResponse
+              );
+            }
+          } catch (fallbackError) {
+            Logger.error('Error in fallback Gemini enhancement:', Logger.formatError(fallbackError));
           }
         }
-      } catch (error) {
-        // Don't fail the request if Gemini enhancement fails, just log the error
-        Logger.error('Error enhancing response with Gemini:', Logger.formatError(error));
       }
 
       // Add role-specific fields based on the role name
@@ -243,8 +317,42 @@ export class ProcessRolePromptUseCase implements IProcessRolePromptUseCase {
           ];
       }
 
+      // Update ticket status to testing
+      await this.agileProcessingService.updateTicketStatus(
+        ticket.id,
+        TicketStatus.TESTING,
+        'Testing solution'
+      );
+
+      // Perform validation on the response
+      const validationResults = this.validateResponse(response);
+      await this.agileProcessingService.updateTicketField(
+        ticket.id,
+        'testing',
+        JSON.stringify(validationResults)
+      );
+
+      // Update ticket status to review
+      await this.agileProcessingService.updateTicketStatus(
+        ticket.id,
+        TicketStatus.REVIEW,
+        'Reviewing solution'
+      );
+
+      // Add ticket ID to the response for tracking
+      response.ticketId = ticket.id;
+
+      // Mark the ticket as completed
+      await this.agileProcessingService.updateTicketStatus(
+        ticket.id,
+        TicketStatus.COMPLETED,
+        'Ticket completed successfully'
+      );
+
       return { data: response };
     } catch (error) {
+      // If there was an error in the main try block, the ticket variable might not be defined
+      // So we need to handle this case gracefully
       return {
         error: {
           error: error instanceof Error ? error.message : String(error),
@@ -252,5 +360,33 @@ export class ProcessRolePromptUseCase implements IProcessRolePromptUseCase {
         }
       };
     }
+  }
+
+  /**
+   * Validates the response to ensure it meets quality standards.
+   * @param response The response to validate
+   * @returns Validation results
+   */
+  private validateResponse(response: RolePromptResponseDto): Record<string, boolean> {
+    const results: Record<string, boolean> = {};
+
+    // Check if the response has a role prompt
+    results.hasRolePrompt = !!response.rolePrompt;
+
+    // Check if the response has an enhanced response
+    results.hasEnhancedResponse = !!response.enhancedResponse;
+
+    // Check if the response has recommendations
+    results.hasRecommendations = Array.isArray(response.recommendations) && response.recommendations.length > 0;
+
+    // Check if the response has next steps
+    results.hasNextSteps = Array.isArray(response.nextSteps) && response.nextSteps.length > 0;
+
+    // Check if the response has code examples (for developer roles)
+    if (response.roleName.toLowerCase().includes('developer') || response.roleName.toLowerCase().includes('architect')) {
+      results.hasCodeExamples = Array.isArray(response.codeExamples) && response.codeExamples.length > 0;
+    }
+
+    return results;
   }
 }

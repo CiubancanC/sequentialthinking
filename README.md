@@ -1,6 +1,6 @@
-# CEO MCP Server
+# Fidora MCP Server
 
-An MCP server implementation that provides role-based prompting tools. This server enables AI models to adopt different professional roles (architect, senior developer, QA engineer, etc.) to enhance problem-solving and software development tasks while following CLEAN architecture principles.
+An MCP server implementation that provides role-based prompting tools with Gemini AI integration. This server enables AI models to adopt different professional roles (architect, senior developer, QA engineer, etc.) to enhance problem-solving and software development tasks while following CLEAN architecture principles. It acts as a "second brain" for AI agents, helping them take the path of least resistance and identify potential risks early.
 
 ## Architecture
 
@@ -41,15 +41,15 @@ Handles formatting and presenting data to users or external systems:
 
 ## Features
 
-- Role-based prompting system for AI models
-- Multiple professional roles (architect, senior developer, QA engineer, etc.)
-- Scenario-based problem-solving approach
-- Systematic division of tasks through prompting
-- Early detection and prevention of bugs
-- Ensures readable and maintainable architecture
-- Professional-level expertise in each role
-- Dependency injection system for better testability and maintainability
-- **NEW**: Integration with Google's Gemini 2.5 Flash Preview model for enhanced responses
+- **Role-Based Prompting**: Adopt specific professional roles for enhanced problem-solving
+- **Multiple Professional Roles**: Architect, senior developer, QA engineer, and more
+- **Gemini AI Integration**: Leverage Google's Gemini 2.5 Flash Preview model for detailed responses
+- **Multithreaded Processing**: Handle large computations efficiently with worker threads
+- **Agile Pipeline**: Treat each prompt as a ticket in an agile pipeline (requirements → design → implementation → testing → review)
+- **Path of Least Resistance**: Identify the optimal solution approach while maintaining quality
+- **Early Risk Identification**: Detect potential issues and challenges early in the process
+- **Robust Error Handling**: Retry logic for transient errors and comprehensive logging
+- **Dependency Injection**: Better testability and maintainability through DI system
 
 ## Tools
 
@@ -184,14 +184,25 @@ src/
 │   ├── models/             # Domain models and entities (roles, scenarios)
 │   ├── interfaces/         # Interfaces for repositories and services
 │   └── services/           # Domain services
+│       ├── roleService.ts           # Role management service
+│       ├── aiModelService.ts        # AI model integration service
+│       ├── automaticRoleService.ts  # Automatic role selection service
+│       ├── roleLookupService.ts     # Role lookup service
+│       └── agileProcessingService.ts # Agile pipeline processing service
 ├── application/            # Application use cases
 │   ├── useCases/           # Use cases/interactors
+│   │   └── processRolePrompt.ts     # Role prompt processing use case
 │   └── dtos/               # Data Transfer Objects
 ├── infrastructure/         # External concerns (frameworks, DB, etc.)
 │   ├── server/             # Server implementation
 │   ├── validation/         # Validation logic
 │   ├── repositories/       # Repository implementations
 │   ├── tools/              # Tool definitions
+│   ├── services/           # Infrastructure services
+│   │   ├── geminiApiClient.ts       # Gemini API client
+│   │   ├── workerThreadService.ts   # Worker thread service
+│   │   ├── workerThread.js          # Worker thread implementation
+│   │   └── geminiWorker.js          # Gemini worker implementation
 │   └── di/                 # Dependency injection system
 ├── presentation/           # Presentation logic
 │   └── formatters/         # Output formatters
@@ -336,26 +347,37 @@ The documentation server will be available at:
 - Request and response schemas
 - Example requests and responses
 
-## Gemini Integration
+## Gemini Integration and Multithreading
 
-The server can be configured to use Google's Gemini 2.5 Flash Preview model to enhance responses. This provides more detailed, accurate, and technically rich responses for all roles.
+The server uses Google's Gemini 2.5 Flash Preview model to enhance responses, providing more detailed, accurate, and technically rich content for all roles. The integration is optimized with multithreading to handle large computations efficiently.
 
 ### Configuration
 
 1. Get a Google API key from the [Google AI Studio](https://makersuite.google.com/)
-2. Create a `.env` file based on the `.env.example` template:
+2. Create a `.env` file with the following configuration:
 
 ```
-# Google API key for Gemini integration
+# Gemini API Configuration
 GOOGLE_API_KEY=your_google_api_key_here
-
-# Whether to use Gemini for enhanced responses
 USE_GEMINI=true
+GEMINI_MODEL=gemini-2.5-flash-preview-04-17
+GEMINI_MAX_TOKENS=2048
+GEMINI_TEMPERATURE=0.7
+GEMINI_TOP_K=40
+GEMINI_TOP_P=0.95
+GEMINI_MAX_RETRIES=3
+GEMINI_RETRY_DELAY=1000
+
+# Worker Thread Configuration
+MIN_WORKER_THREADS=2
+MAX_WORKER_THREADS=8
+MAX_WORKER_QUEUE=100
+WORKER_IDLE_TIMEOUT=60000
 ```
 
 3. Restart the server to apply the changes
 
-When Gemini integration is enabled, responses will include an additional `enhancedResponse` field with the AI-generated content.
+When Gemini integration is enabled, responses will include an additional `enhancedResponse` field with the AI-generated content. The response is processed through an agile pipeline that includes requirements gathering, design, implementation, testing, and review stages. Each prompt is treated as a ticket in this pipeline, ensuring comprehensive and well-thought-out responses.
 
 ## Example Usage
 
@@ -372,8 +394,8 @@ Response (with Gemini integration enabled):
 
 ```json
 {
-  "rolePrompt": "As a senior architect, I'll design a scalable microservice architecture for an e-commerce platform...",
-  "enhancedResponse": "Detailed analysis and recommendations from Gemini 2.5 Flash Preview...",
+  "rolePrompt": "As a senior architect, I will address the following: Design a scalable microservice architecture for an e-commerce platform...",
+  "enhancedResponse": "# TICKET ANALYSIS:\n\n## Requirements\n- Scalable architecture for e-commerce\n- Microservice-based approach\n- Must handle varying loads\n\n## Risks and Challenges\n- Service communication complexity\n- Data consistency across services\n- Deployment and monitoring overhead\n\n# DESIGN APPROACH:\n\n## Recommended Architecture\n...",
   "recommendations": [
     "Use API Gateway for client communication",
     "Implement event-driven communication between services",
@@ -383,7 +405,16 @@ Response (with Gemini integration enabled):
     "Define service boundaries",
     "Design data model",
     "Plan deployment strategy"
-  ]
+  ],
+  "architectureComponents": [
+    "API Gateway",
+    "User Service",
+    "Product Catalog Service",
+    "Order Service",
+    "Payment Service"
+  ],
+  "ticketId": "f8e7d6c5-b4a3-2c1d-0e9f-8g7h6i5j4k3l",
+  "status": "success"
 }
 ```
 

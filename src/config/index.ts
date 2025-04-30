@@ -61,28 +61,63 @@ export const config = {
       /**
        * The model to use.
        */
-      model: "gemini-2.5-flash-preview-04-17",
+      model: process.env.GEMINI_MODEL || "gemini-2.5-flash-preview-04-17",
 
       /**
        * The maximum number of tokens to generate.
        */
-      maxTokens: 1024,
+      maxTokens: parseInt(process.env.GEMINI_MAX_TOKENS || "2048"),
 
       /**
        * The temperature for text generation (0.0 to 1.0).
        */
-      temperature: 0.4,
+      temperature: parseFloat(process.env.GEMINI_TEMPERATURE || "0.7"),
 
       /**
        * The top-k value for sampling.
        */
-      topK: 40,
+      topK: parseInt(process.env.GEMINI_TOP_K || "40"),
 
       /**
        * The top-p value for sampling.
        */
-      topP: 0.95
+      topP: parseFloat(process.env.GEMINI_TOP_P || "0.95"),
+
+      /**
+       * The maximum number of retries for failed requests.
+       */
+      maxRetries: parseInt(process.env.GEMINI_MAX_RETRIES || "3"),
+
+      /**
+       * The base delay in milliseconds between retries.
+       */
+      retryDelay: parseInt(process.env.GEMINI_RETRY_DELAY || "1000")
     }
+  },
+
+  /**
+   * Worker thread configuration.
+   */
+  workerThreads: {
+    /**
+     * The minimum number of worker threads to keep alive.
+     */
+    minThreads: parseInt(process.env.MIN_WORKER_THREADS || "2"),
+
+    /**
+     * The maximum number of worker threads to create.
+     */
+    maxThreads: parseInt(process.env.MAX_WORKER_THREADS || "8"),
+
+    /**
+     * The maximum number of tasks to queue before rejecting new tasks.
+     */
+    maxQueue: parseInt(process.env.MAX_WORKER_QUEUE || "100"),
+
+    /**
+     * The idle timeout in milliseconds before a worker thread is terminated.
+     */
+    idleTimeout: parseInt(process.env.WORKER_IDLE_TIMEOUT || "60000")
   },
 
   /**
