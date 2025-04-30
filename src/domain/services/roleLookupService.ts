@@ -1,4 +1,5 @@
 import { Role } from "../models/role.js";
+import { IRoleLookupService } from "../interfaces/serviceLookupInterfaces.js";
 import { Logger } from "../../utils/logger.js";
 import { config } from "../../config/index.js";
 
@@ -6,7 +7,7 @@ import { config } from "../../config/index.js";
  * Service for looking up roles by name, ID, or keywords.
  * Uses a single, prioritized lookup function for simplicity and maintainability.
  */
-export class RoleLookupService {
+export class RoleLookupService implements IRoleLookupService {
   /**
    * Creates a new RoleLookupService instance.
    * @param roles Map of role IDs to roles

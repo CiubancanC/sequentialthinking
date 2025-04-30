@@ -1,21 +1,11 @@
 import { IRoleService } from "../../domain/interfaces/roleInterfaces.js";
+import { IProcessRolePromptUseCase, ProcessRolePromptResult } from "../interfaces/useCaseInterfaces.js";
 import { RolePromptRequestDto, RolePromptResponseDto } from "../dtos/rolePromptDto.js";
-
-/**
- * Result of processing a role prompt.
- */
-export type ProcessRolePromptResult = {
-  data?: RolePromptResponseDto;
-  error?: {
-    error: string;
-    status: 'failed';
-  };
-};
 
 /**
  * Use case for processing role prompts.
  */
-export class ProcessRolePromptUseCase {
+export class ProcessRolePromptUseCase implements IProcessRolePromptUseCase {
   /**
    * Creates a new ProcessRolePromptUseCase instance.
    * @param roleService The role service to use
