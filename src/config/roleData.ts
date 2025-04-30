@@ -159,7 +159,14 @@ export const roleData = [
 /**
  * Configuration for predefined scenarios.
  */
-export const scenarioData = [
+export const scenarioData: Array<{
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  complexity: 'low' | 'medium' | 'high';
+  suggestedRoles: string[];
+}> = [
   {
     id: 'arch-001',
     title: 'Design a Scalable E-commerce Platform',

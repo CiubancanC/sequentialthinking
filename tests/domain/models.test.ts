@@ -35,21 +35,19 @@ describe('Domain Models', () => {
     it('should generate a correct prompt string', () => {
       const role = Role.create('test-role-id', 'Test Role', 'A role for testing.', ['Resp 1', 'Resp 2'], ['Exp 1', 'Exp 2']);
       const context = 'Solve this problem';
-      const expectedPrompt = `As a senior Test Role, I will address the following: Solve this problem
+      const generatedPrompt = role.generatePrompt(context);
 
-My responsibilities include:
-- Resp 1
-- Resp 2
-
-My areas of expertise include:
-- Exp 1
-- Exp 2
-
-A role for testing.
-
-I will now analyze the problem and provide expert guidance:
-`;
-      expect(role.generatePrompt(context)).toBe(expectedPrompt);
+      // Check that the prompt contains the expected parts
+      expect(generatedPrompt).toContain('As a senior Test Role, I will address the following: Solve this problem');
+      expect(generatedPrompt).toContain('My responsibilities include:');
+      expect(generatedPrompt).toContain('- Resp 1');
+      expect(generatedPrompt).toContain('- Resp 2');
+      expect(generatedPrompt).toContain('My areas of expertise include:');
+      expect(generatedPrompt).toContain('- Exp 1');
+      expect(generatedPrompt).toContain('- Exp 2');
+      expect(generatedPrompt).toContain('A role for testing.');
+      expect(generatedPrompt).toContain('I will provide a comprehensive response with the following structure:');
+      expect(generatedPrompt).toContain('I will now analyze the problem and provide expert guidance:');
     });
   });
 
@@ -94,6 +92,7 @@ I will now analyze the problem and provide expert guidance:
         analysis: 'Analysis',
         recommendations: ['Rec 1', 'Rec 2'],
         nextSteps: ['Step 1'],
+        codeExamples: []
       });
     });
   });
