@@ -3,6 +3,7 @@ import { Role } from "../../domain/models/role.js";
 import { RoleResponse } from "../../domain/models/roleResponse.js";
 import { Scenario } from "../../domain/models/scenario.js";
 import { RoleLookupService } from "../../domain/services/roleLookupService.js";
+import { DomainFactory } from "../../domain/utils/domainFactory.js";
 import { Logger } from "../../utils/logger.js";
 import { roleData, scenarioData, roleAliases } from "../../config/roleData.js";
 
@@ -87,13 +88,13 @@ export class InMemoryRoleRepository implements IRoleRepository {
   private initializeRoles(): void {
     // Create roles from configuration
     for (const roleConfig of roleData) {
-      const role = Role.create(
-        roleConfig.id,
-        roleConfig.name,
-        roleConfig.description,
-        roleConfig.responsibilities,
-        roleConfig.expertise
-      );
+      const role = DomainFactory.createRole({
+        id: roleConfig.id,
+        name: roleConfig.name,
+        description: roleConfig.description,
+        responsibilities: roleConfig.responsibilities,
+        expertise: roleConfig.expertise
+      });
       this.roles.set(role.id, role);
       Logger.debug(`Initialized role: ${role.id} (${role.name})`);
     }
@@ -105,14 +106,14 @@ export class InMemoryRoleRepository implements IRoleRepository {
   private initializeScenarios(): void {
     // Create scenarios from configuration
     for (const scenarioConfig of scenarioData) {
-      const scenario = Scenario.create(
-        scenarioConfig.id,
-        scenarioConfig.title,
-        scenarioConfig.description,
-        scenarioConfig.category,
-        scenarioConfig.complexity,
-        scenarioConfig.suggestedRoles
-      );
+      const scenario = DomainFactory.createScenario({
+        id: scenarioConfig.id,
+        title: scenarioConfig.title,
+        description: scenarioConfig.description,
+        category: scenarioConfig.category,
+        complexity: scenarioConfig.complexity,
+        suggestedRoles: scenarioConfig.suggestedRoles
+      });
       this.scenarios.set(scenario.id, scenario);
       Logger.debug(`Initialized scenario: ${scenario.id} (${scenario.title})`);
     }

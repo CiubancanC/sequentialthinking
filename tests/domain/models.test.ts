@@ -17,19 +17,19 @@ describe('Domain Models', () => {
     });
 
     it('should throw error if Role is created with missing required fields', () => {
-      expect(() => Role.create('', 'Test Role', 'A role for testing', ['Resp'], ['Exp'])).toThrow('Role must have an id, name, and description');
-      expect(() => Role.create('id', '', 'A role for testing', ['Resp'], ['Exp'])).toThrow('Role must have an id, name, and description');
-      expect(() => Role.create('id', 'Test Role', '', ['Resp'], ['Exp'])).toThrow('Role must have an id, name, and description');
+      expect(() => Role.create('', 'Test Role', 'A role for testing', ['Resp'], ['Exp'])).toThrow('id: id is required');
+      expect(() => Role.create('id', '', 'A role for testing', ['Resp'], ['Exp'])).toThrow('name: name is required');
+      expect(() => Role.create('id', 'Test Role', '', ['Resp'], ['Exp'])).toThrow('description: description is required');
     });
 
     it('should throw error if Role is created with no responsibilities', () => {
-      expect(() => Role.create('id', 'Test Role', 'Desc', [], ['Exp'])).toThrow('Role must have at least one responsibility');
-      expect(() => Role.create('id', 'Test Role', 'Desc', undefined as any, ['Exp'])).toThrow('Role must have at least one responsibility');
+      expect(() => Role.create('id', 'Test Role', 'Desc', [], ['Exp'])).toThrow('responsibilities: responsibilities must have at least one item');
+      expect(() => Role.create('id', 'Test Role', 'Desc', undefined as any, ['Exp'])).toThrow('responsibilities: responsibilities must have at least one item');
     });
 
     it('should throw error if Role is created with no expertise', () => {
-      expect(() => Role.create('id', 'Test Role', 'Desc', ['Resp'], [])).toThrow('Role must have at least one area of expertise');
-      expect(() => Role.create('id', 'Test Role', 'Desc', ['Resp'], undefined as any)).toThrow('Role must have at least one area of expertise');
+      expect(() => Role.create('id', 'Test Role', 'Desc', ['Resp'], [])).toThrow('expertise: expertise must have at least one item');
+      expect(() => Role.create('id', 'Test Role', 'Desc', ['Resp'], undefined as any)).toThrow('expertise: expertise must have at least one item');
     });
 
     it('should generate a correct prompt string', () => {
@@ -71,15 +71,15 @@ describe('Domain Models', () => {
 
 
     it('should throw error if RoleResponse is created with missing required fields', () => {
-      expect(() => RoleResponse.create('', 'Name', 'Context', 'Analysis', ['Rec'])).toThrow('RoleResponse must have a roleId, roleName, context, and analysis');
-      expect(() => RoleResponse.create('id', '', 'Context', 'Analysis', ['Rec'])).toThrow('RoleResponse must have a roleId, roleName, context, and analysis');
-      expect(() => RoleResponse.create('id', 'Name', '', 'Analysis', ['Rec'])).toThrow('RoleResponse must have a roleId, roleName, context, and analysis');
-      expect(() => RoleResponse.create('id', 'Name', 'Context', '', ['Rec'])).toThrow('RoleResponse must have a roleId, roleName, context, and analysis');
+      expect(() => RoleResponse.create('', 'Name', 'Context', 'Analysis', ['Rec'])).toThrow('roleId: roleId is required');
+      expect(() => RoleResponse.create('id', '', 'Context', 'Analysis', ['Rec'])).toThrow('roleName: roleName is required');
+      expect(() => RoleResponse.create('id', 'Name', '', 'Analysis', ['Rec'])).toThrow('context: context is required');
+      expect(() => RoleResponse.create('id', 'Name', 'Context', '', ['Rec'])).toThrow('analysis: analysis is required');
     });
 
     it('should throw error if RoleResponse is created with no recommendations', () => {
-      expect(() => RoleResponse.create('id', 'Name', 'Context', 'Analysis', [])).toThrow('RoleResponse must have at least one recommendation');
-      expect(() => RoleResponse.create('id', 'Name', 'Context', 'Analysis', undefined as any)).toThrow('RoleResponse must have at least one recommendation');
+      expect(() => RoleResponse.create('id', 'Name', 'Context', 'Analysis', [])).toThrow('recommendations: recommendations must have at least one item');
+      expect(() => RoleResponse.create('id', 'Name', 'Context', 'Analysis', undefined as any)).toThrow('recommendations: recommendations must have at least one item');
     });
 
     it('should convert RoleResponse to JSON object', () => {
@@ -110,15 +110,15 @@ describe('Domain Models', () => {
     });
 
     it('should throw error if Scenario is created with missing required fields', () => {
-      expect(() => Scenario.create('', 'Title', 'Desc', 'Cat', 'low', ['Role'])).toThrow('Scenario must have an id, title, description, and category');
-      expect(() => Scenario.create('id', '', 'Desc', 'Cat', 'low', ['Role'])).toThrow('Scenario must have an id, title, description, and category');
-      expect(() => Scenario.create('id', 'Title', '', 'Cat', 'low', ['Role'])).toThrow('Scenario must have an id, title, description, and category');
-      expect(() => Scenario.create('id', 'Title', 'Desc', '', 'low', ['Role'])).toThrow('Scenario must have an id, title, description, and category');
+      expect(() => Scenario.create('', 'Title', 'Desc', 'Cat', 'low', ['Role'])).toThrow('id: id is required');
+      expect(() => Scenario.create('id', '', 'Desc', 'Cat', 'low', ['Role'])).toThrow('title: title is required');
+      expect(() => Scenario.create('id', 'Title', '', 'Cat', 'low', ['Role'])).toThrow('description: description is required');
+      expect(() => Scenario.create('id', 'Title', 'Desc', '', 'low', ['Role'])).toThrow('category: category is required');
     });
 
     it('should throw error if Scenario is created with no suggested roles', () => {
-      expect(() => Scenario.create('id', 'Title', 'Desc', 'Cat', 'low', [])).toThrow('Scenario must have at least one suggested role');
-      expect(() => Scenario.create('id', 'Title', 'Desc', 'Cat', 'low', undefined as any)).toThrow('Scenario must have at least one suggested role');
+      expect(() => Scenario.create('id', 'Title', 'Desc', 'Cat', 'low', [])).toThrow('suggestedRoles: suggestedRoles must have at least one item');
+      expect(() => Scenario.create('id', 'Title', 'Desc', 'Cat', 'low', undefined as any)).toThrow('suggestedRoles: suggestedRoles must have at least one item');
     });
 
     it('should format the scenario correctly', () => {

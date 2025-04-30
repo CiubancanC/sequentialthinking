@@ -1,15 +1,37 @@
+import { IRole } from "../interfaces/domainTypes.js";
+import { combineValidationErrors, throwIfInvalid, validateNonEmptyArray, validateRequired } from "../utils/validation.js";
+
 /**
  * Represents a professional role that an AI can adopt.
  * Each role has specific expertise, responsibilities, and approaches to problem-solving.
  */
-export class Role {
-  private constructor(
-    private readonly _id: string,
-    private readonly _name: string,
-    private readonly _description: string,
-    private readonly _responsibilities: string[],
-    private readonly _expertise: string[]
-  ) {}
+export class Role implements IRole {
+  /**
+   * Creates a new Role instance.
+   * @param id Unique identifier for the role
+   * @param name Display name of the role
+   * @param description Detailed description of the role
+   * @param responsibilities Key responsibilities of the role
+   * @param expertise Areas of expertise for the role
+   * @throws Error if any required fields are missing or invalid
+   */
+  constructor(
+    public readonly id: string,
+    public readonly name: string,
+    public readonly description: string,
+    public readonly responsibilities: readonly string[],
+    public readonly expertise: readonly string[]
+  ) {
+    const validationResult = combineValidationErrors([
+      validateRequired(id, 'id'),
+      validateRequired(name, 'name'),
+      validateRequired(description, 'description'),
+      validateNonEmptyArray(responsibilities as string[], 'responsibilities'),
+      validateNonEmptyArray(expertise as string[], 'expertise')
+    ]);
+
+    throwIfInvalid(validationResult);
+  }
 
   /**
    * Creates a new Role instance.
@@ -27,18 +49,6 @@ export class Role {
     responsibilities: string[],
     expertise: string[]
   ): Role {
-    if (!id || !name || !description) {
-      throw new Error("Role must have an id, name, and description");
-    }
-
-    if (!responsibilities || responsibilities.length === 0) {
-      throw new Error("Role must have at least one responsibility");
-    }
-
-    if (!expertise || expertise.length === 0) {
-      throw new Error("Role must have at least one area of expertise");
-    }
-
     return new Role(id, name, description, responsibilities, expertise);
   }
 
@@ -48,15 +58,15 @@ export class Role {
    * @returns A formatted prompt string
    */
   public generatePrompt(context: string): string {
-    return `As a senior ${this._name}, I will address the following: ${context}
+    return `As a senior ${this.name}, I will address the following: ${context}
 
 My responsibilities include:
-${this._responsibilities.map(r => `- ${r}`).join('\n')}
+${this.responsibilities.map((r: string) => `- ${r}`).join('\n')}
 
 My areas of expertise include:
-${this._expertise.map(e => `- ${e}`).join('\n')}
+${this.expertise.map((e: string) => `- ${e}`).join('\n')}
 
-${this._description}
+${this.description}
 
 I will provide a comprehensive response with the following structure:
 1. A detailed analysis of the problem
@@ -74,7 +84,7 @@ I will now analyze the problem and provide expert guidance:
    */
   private getCodeExamplesPrompt(): string {
     // Customize the code examples prompt based on the role
-    switch (this._id.toLowerCase()) {
+    switch (this.id.toLowerCase()) {
       case 'senior-developer':
         return 'Concrete code examples with detailed implementations (not just pseudocode)';
       case 'architect':
@@ -88,26 +98,5 @@ I will now analyze the problem and provide expert guidance:
       default:
         return 'Relevant examples to illustrate the solution';
     }
-  }
-
-  // Getters
-  public get id(): string {
-    return this._id;
-  }
-
-  public get name(): string {
-    return this._name;
-  }
-
-  public get description(): string {
-    return this._description;
-  }
-
-  public get responsibilities(): string[] {
-    return [...this._responsibilities];
-  }
-
-  public get expertise(): string[] {
-    return [...this._expertise];
   }
 }

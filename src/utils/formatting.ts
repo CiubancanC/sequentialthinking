@@ -24,7 +24,7 @@ export function formatAsJson(obj: any): string {
  * @param prefix The prefix to use for each item (default: '- ')
  * @returns A formatted string with each item on a new line
  */
-export function formatAsList(items: string[], prefix: string = '- '): string {
+export function formatAsList(items: readonly string[], prefix: string = '- '): string {
   if (!items || items.length === 0) return '';
   return items.map(item => `${prefix}${item}`).join('\n');
 }

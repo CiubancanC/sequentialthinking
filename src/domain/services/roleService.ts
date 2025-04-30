@@ -2,6 +2,7 @@ import { IRoleRepository, IRoleService } from "../interfaces/roleInterfaces.js";
 import { Role } from "../models/role.js";
 import { RoleResponse } from "../models/roleResponse.js";
 import { Scenario } from "../models/scenario.js";
+import { DomainFactory } from "../utils/domainFactory.js";
 
 /**
  * Implementation of the role service.
@@ -61,14 +62,14 @@ export class RoleServiceImpl implements IRoleService {
       throw new Error(`Role not found: ${roleName}`);
     }
 
-    const response = RoleResponse.create(
-      role.id,
-      role.name,
+    const response = DomainFactory.createRoleResponse({
+      roleId: role.id,
+      roleName: role.name,
       context,
       analysis,
       recommendations,
       nextSteps
-    );
+    });
 
     return this.repository.saveRoleResponse(response);
   }
