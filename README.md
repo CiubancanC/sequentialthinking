@@ -306,6 +306,33 @@ container.register<IRoleRepository>(
 );
 ```
 
+## API Documentation
+
+The project includes OpenAPI/Swagger documentation to help users understand how to interact with the MCP server. Although the server operates via the Model Control Protocol and not as a traditional HTTP API, the documentation represents the MCP tools as if they were API endpoints for easier understanding.
+
+### Viewing the Documentation
+
+To start the documentation server:
+
+```bash
+# Start the documentation server in development mode
+npm run docs
+
+# Or build and start the documentation server
+npm run docs:build
+```
+
+The documentation server will be available at:
+- http://localhost:3000 - Documentation home page
+- http://localhost:3000/api-docs - Swagger UI
+
+### Documentation Features
+
+- Interactive Swagger UI for exploring the API
+- Detailed descriptions of all available tools
+- Request and response schemas
+- Example requests and responses
+
 ## Example Usage
 
 Here's an example of how to use the rolePrompt tool:

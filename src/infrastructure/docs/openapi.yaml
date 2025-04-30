@@ -1,0 +1,134 @@
+openapi: 3.0.0
+info:
+  title: Fidora MCP Server API
+  description: |
+    API documentation for the Fidora MCP (Model Control Protocol) server.
+    
+    This server provides role-based prompting tools for AI models, allowing them to adopt
+    different professional roles (architect, senior developer, QA engineer, etc.) to enhance
+    problem-solving and software development tasks.
+    
+    Note: This server operates via the Model Control Protocol (MCP) and not as a traditional
+    HTTP API. This documentation represents the MCP tools as if they were API endpoints
+    for documentation purposes.
+  version: 1.0.0
+  contact:
+    name: Fidora Support
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: /api/v1
+    description: MCP Server (virtual endpoint)
+
+tags:
+  - name: Role Prompting
+    description: Tools for role-based prompting
+
+paths:
+  /tools/rolePrompt:
+    post:
+      tags:
+        - Role Prompting
+      summary: Generate a role-based prompt response
+      description: |
+        This tool enables AI models to adopt specific professional roles for enhanced problem-solving.
+        It allows you to specify a professional role and a context or problem for the role to address.
+        
+        When to use this tool:
+        - When you need expert guidance from a specific professional perspective
+        - When you want to approach a problem with a specific role's expertise
+        - When you need to systematically divide tasks among different roles
+        
+        Available roles (use EXACTLY these role names):
+        - architect: For system design, architecture decisions, and technical planning
+        - senior-developer: For implementation guidance, coding best practices, and technical solutions
+        - qa-engineer: For testing strategies, quality assurance, and bug prevention
+        - devops-engineer: For deployment, CI/CD, and infrastructure concerns
+        - security-engineer: For security assessments, vulnerability management, and security best practices
+        - data-scientist: For data analysis, machine learning, and statistical insights
+        - ux-designer: For user experience design, interface improvements, and usability considerations
+        - product-manager: For product strategy, feature prioritization, and roadmap planning
+      operationId: rolePrompt
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RolePromptRequest'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RolePromptResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    RolePromptRequest:
+      type: object
+      required:
+        - role
+        - context
+      properties:
+        role:
+          type: string
+          description: The professional role to adopt
+          example: architect
+        context:
+          type: string
+          description: The context or problem description for the role to address
+          example: Design a scalable microservice architecture for an e-commerce platform
+        scenarioId:
+          type: string
+          description: Optional ID of a predefined scenario to use
+          example: system-design
+    
+    RolePromptResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [success]
+          description: Status of the response
+          example: success
+        data:
+          type: object
+          properties:
+            response:
+              type: string
+              description: The role-based analysis or solution
+              example: As an architect, I recommend a microservice architecture with the following components...
+            additionalInfo:
+              type: object
+              description: Additional information provided by the role
+              example:
+                considerations: ["Scalability", "Fault tolerance", "Data consistency"]
+                recommendations: ["Use event-driven architecture", "Implement API gateway"]
+    
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [failed]
+          description: Status of the response
+          example: failed
+        error:
+          type: string
+          description: Error message
+          example: Invalid role specified
