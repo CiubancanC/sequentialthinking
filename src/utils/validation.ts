@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ValidationError } from './errors.js';
 
 /**
  * Validates data against a Zod schema.
@@ -6,19 +7,24 @@ import { z } from 'zod';
  * @param data The data to validate
  * @param errorPrefix The prefix to use for error messages
  * @returns The validated data
- * @throws Error if validation fails
+ * @throws ValidationError if validation fails
  */
 export function validateWithSchema<T>(
-  schema: z.ZodSchema<T>, 
-  data: unknown, 
+  schema: z.ZodSchema<T>,
+  data: unknown,
   errorPrefix: string = 'Validation error'
 ): T {
   try {
     return schema.parse(data);
   } catch (error) {
+    // Format Zod errors in a user-friendly way
     if (error instanceof z.ZodError) {
-      throw new Error(`${errorPrefix}: ${error.errors.map(e => e.message).join(', ')}`);
+      const errorMessages = error.errors.map(e => e.message).join(', ');
+      throw new ValidationError(`${errorPrefix}: ${errorMessages}`);
     }
-    throw new Error(`${errorPrefix}: ${error instanceof Error ? error.message : String(error)}`);
+
+    // Handle other types of errors
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    throw new ValidationError(`${errorPrefix}: ${errorMessage}`);
   }
 }

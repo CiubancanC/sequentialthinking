@@ -4,9 +4,10 @@
   "exec": "node dist/index.js",
   "ignore": ["node_modules", ".git", "dist/tests"],
   "delay": "500",
-  "verbose": true,
+  "verbose": false,
   "env": {
     "NODE_ENV": "development",
-    "DEBUG": "true"
+    "DEBUG": "true",
+    "LOG_LEVEL": "INFO"
   }
 }

@@ -8,18 +8,22 @@ import { InMemoryRoleRepository } from "../repositories/roleRepository.js";
 import { ROLE_PROMPT_TOOL } from "../tools/rolePromptTool.js";
 import { validateRolePromptData } from "../validation/rolePromptSchemas.js";
 import { RolePromptFormatter } from "../../presentation/formatters/rolePromptFormatter.js";
+import { Logger } from "../../utils/logger.js";
+import { config } from "../../config/index.js";
+import { createErrorResponse } from "../../utils/errors.js";
 
 /**
  * Creates and configures the MCP server.
  * @returns The configured server.
  */
 export function createServer(): McpServer {
-  console.error("Fidora Server: Creating server instance");
+  Logger.info("Creating Fidora server instance");
+
   try {
     // Create the server with metadata
     const server = new McpServer({
-      name: "fidora-server",
-      version: "1.0.0",
+      name: config.server.name,
+      version: config.server.version,
     });
 
     // Set up the domain and application layers
@@ -29,7 +33,7 @@ export function createServer(): McpServer {
     // Set up the use cases
     const processRolePromptUseCase = new ProcessRolePromptUseCase(roleService);
 
-    console.error("[DEBUG] Adding rolePrompt tool");
+    Logger.debug("Adding rolePrompt tool");
 
     // Add the rolePrompt tool
     server.tool(
@@ -48,8 +52,7 @@ export function createServer(): McpServer {
           const result = await processRolePromptUseCase.execute(validatedInput);
 
           if (result.error) {
-            // Handle error case
-            console.error(`Error processing role prompt: ${result.error.error}`);
+            Logger.warn(`Error processing role prompt: ${result.error.error}`);
             return {
               content: [{
                 type: "text",
@@ -57,12 +60,18 @@ export function createServer(): McpServer {
               }],
               isError: true
             };
-          } else if (result.data) {
-            // Handle success case
-            // Format the role prompt for console display
-            const role = await roleService.getRoleByName(validatedInput.role);
-            if (role) {
-              console.error(RolePromptFormatter.formatForConsole(role, validatedInput.context));
+          }
+
+          if (result.data) {
+            // Format the role prompt for console display if in debug mode
+            if (config.logging.debug) {
+              const role = await roleService.getRoleByName(validatedInput.role);
+              if (role) {
+                Logger.debug("Role prompt processed successfully", {
+                  role: role.id,
+                  context: validatedInput.context.substring(0, 50) + "..."
+                });
+              }
             }
 
             // Return the result as JSON
@@ -84,14 +93,11 @@ export function createServer(): McpServer {
           };
         } catch (error) {
           // Handle unexpected errors
-          console.error(`Unexpected error: ${error instanceof Error ? error.message : String(error)}`);
+          Logger.error("Unexpected error processing role prompt:", Logger.formatError(error));
           return {
             content: [{
               type: "text",
-              text: RolePromptFormatter.formatOutputToJson({
-                error: error instanceof Error ? error.message : String(error),
-                status: 'failed'
-              })
+              text: RolePromptFormatter.formatOutputToJson(createErrorResponse(error))
             }],
             isError: true
           };
@@ -99,16 +105,10 @@ export function createServer(): McpServer {
       }
     );
 
-
-
-    // Debug: Log the registered tool
-    console.error("[DEBUG] Final registered tool in createServer:");
-    console.error(`[DEBUG]   - ${ROLE_PROMPT_TOOL.name}`);
-
+    Logger.debug("Server configuration complete");
     return server;
   } catch (error) {
-    console.error("Error creating server:", error);
-    console.error("Error details:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
+    Logger.error("Error creating server:", Logger.formatError(error));
     throw error;
   }
 }
@@ -117,36 +117,24 @@ export function createServer(): McpServer {
  * Initializes and runs the MCP server using standard I/O transport.
  */
 export async function runServer(): Promise<void> {
-  console.error("Fidora Server: Starting runServer function");
+  Logger.info("Starting Fidora Server");
 
   try {
-    console.error("Fidora Server: Creating server instance");
+    // Create server instance
     const server = createServer();
 
-    // Debug: Log the registered tool
-    console.error("[DEBUG] Registered tool:");
-    console.error(`[DEBUG]   - ${ROLE_PROMPT_TOOL.name}`);
-
-    console.error("Fidora Server: Creating transport");
+    // Create transport
+    Logger.debug("Creating stdio transport");
     const transport = new StdioServerTransport();
 
     try {
-      console.error("Fidora Server: Connecting to transport");
-
-      // Debug: Log that we're about to connect
-      console.error("[DEBUG] Tool before connecting:");
-      console.error(`[DEBUG]   - ${ROLE_PROMPT_TOOL.name}`);
-
+      // Connect to transport
+      Logger.info("Connecting to transport");
       await server.connect(transport);
-      console.error("Fidora Server running on stdio");
+      Logger.info("Fidora Server running on stdio");
 
-      // Debug: Log that we've connected
-      console.error("[DEBUG] Tool after connecting:");
-      console.error(`[DEBUG]   - ${ROLE_PROMPT_TOOL.name}`);
-
-      // Update the available tools message
-      const toolNames = `${ROLE_PROMPT_TOOL.name}`;
-      console.error(`Available tool: ${toolNames}`);
+      // Log available tools
+      Logger.info(`Available tool: ${ROLE_PROMPT_TOOL.name}`);
 
       // Keep the process alive indefinitely
       // The McpServer will handle the connection lifecycle
@@ -154,15 +142,11 @@ export async function runServer(): Promise<void> {
         // This promise intentionally never resolves to keep the server running
       });
     } catch (error) {
-      console.error("Error during server connection or operation:", error);
-      console.error("Error details:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
+      Logger.error("Error during server connection:", Logger.formatError(error));
       throw error;
-    } finally {
-      console.error("Fidora Server: runServer function potentially finishing");
     }
   } catch (error) {
-    console.error("Fatal error in runServer:", error);
-    console.error("Error details:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
+    Logger.error("Fatal error in runServer:", Logger.formatError(error));
     throw error;
   }
 }

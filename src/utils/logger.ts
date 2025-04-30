@@ -10,10 +10,29 @@ export enum LogLevel {
   ERROR = 'ERROR'
 }
 
+// Map of log level priorities
+const LOG_LEVEL_PRIORITY: Record<LogLevel, number> = {
+  [LogLevel.DEBUG]: 0,
+  [LogLevel.INFO]: 1,
+  [LogLevel.WARN]: 2,
+  [LogLevel.ERROR]: 3
+};
+
 /**
  * Logger utility for consistent logging throughout the application.
  */
 export class Logger {
+  // Current minimum log level
+  private static minLevel: LogLevel = (config.logging.minLevel as LogLevel) || LogLevel.INFO;
+
+  /**
+   * Sets the minimum log level.
+   * @param level The minimum log level to display
+   */
+  static setMinLevel(level: LogLevel): void {
+    this.minLevel = level;
+  }
+
   /**
    * Logs a debug message.
    * @param message The message to log
@@ -53,15 +72,41 @@ export class Logger {
   }
 
   /**
+   * Formats an error object for logging.
+   * @param error The error to format
+   * @returns A simplified error object with essential properties
+   */
+  static formatError(error: unknown): Record<string, unknown> {
+    if (error instanceof Error) {
+      return {
+        message: error.message,
+        name: error.name,
+        stack: error.stack
+      };
+    }
+    return { error: String(error) };
+  }
+
+  /**
    * Logs a message with the specified log level.
    * @param level The log level
    * @param message The message to log
    * @param args Additional arguments to log
    */
   private static log(level: LogLevel, message: string, ...args: any[]): void {
-    const timestamp = new Date().toISOString();
-    const prefix = `[${timestamp}] [${level}]`;
-    
+    // Skip logging if below minimum level
+    if (LOG_LEVEL_PRIORITY[level] < LOG_LEVEL_PRIORITY[this.minLevel]) {
+      return;
+    }
+
+    let prefix = `[${level}]`;
+
+    // Add timestamp if configured
+    if (config.logging.timestamps) {
+      const timestamp = new Date().toISOString();
+      prefix = `[${timestamp}] ${prefix}`;
+    }
+
     switch (level) {
       case LogLevel.DEBUG:
         console.debug(`${prefix} ${message}`, ...args);

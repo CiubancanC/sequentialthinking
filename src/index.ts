@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 
 import { main } from './infrastructure/server/index.js';
+import { Logger } from './utils/logger.js';
 
 // Start the server with error handling
 try {
-  console.error("Starting Fidora Server from index.ts with hot reloading enabled!");
-  console.log("Hot reloading test: This line was added.");
+  Logger.info("Starting Fidora Server");
   main();
 } catch (error) {
-  console.error("Fatal error in index.ts:", error);
+  Logger.error("Fatal error in index.ts:", Logger.formatError(error));
   process.exit(1);
 }

@@ -1,22 +1,21 @@
 #!/usr/bin/env node
 
 import { runServer } from './server.js';
+import { Logger } from '../../utils/logger.js';
 
 /**
  * Entry point for the Fidora server.
  * Starts the server and handles any fatal errors.
  */
 export function main(): void {
-  console.error("Fidora Server: Starting main function in server/index.ts");
+  Logger.info("Fidora Server: Starting main function");
   try {
     runServer().catch((error) => {
-      console.error("Fatal error running server:", error);
-      console.error("Error details:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
+      Logger.error("Fatal error running server:", Logger.formatError(error));
       process.exit(1);
     });
   } catch (error) {
-    console.error("Unexpected error in main function:", error);
-    console.error("Error details:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
+    Logger.error("Unexpected error in main function:", Logger.formatError(error));
     process.exit(1);
   }
 }

@@ -2,6 +2,8 @@
  * Application configuration.
  * This file contains centralized configuration values for the application.
  */
+import { roleData, scenarioData, roleAliases } from './roleData.js';
+
 export const config = {
   /**
    * Server configuration.
@@ -31,6 +33,16 @@ export const config = {
      * Whether to enable colorized output.
      */
     colorize: true,
+
+    /**
+     * Whether to log timestamps.
+     */
+    timestamps: true,
+
+    /**
+     * Minimum log level to display.
+     */
+    minLevel: process.env.LOG_LEVEL || 'INFO'
   },
 
   /**
@@ -79,7 +91,8 @@ export const config = {
       'product', 'roadmap', 'feature', 'requirement', 'user story',
       'backlog', 'prioritization', 'market', 'customer', 'stakeholder'
     ]
-  },
-
-
+  }
 };
+
+// Export role data for easy access
+export { roleData, scenarioData, roleAliases };

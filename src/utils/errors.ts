@@ -66,17 +66,20 @@ export class NotFoundError extends AppError {
 }
 
 /**
- * Creates an error response object.
+ * Creates a standardized error response object.
  * @param error The error to convert
- * @returns An error response object
+ * @returns A standardized error response object
  */
 export function createErrorResponse(error: unknown): { error: string; status: 'failed' } {
+  // If it's our custom error type, use its built-in JSON conversion
   if (error instanceof AppError) {
     return error.toJSON() as { error: string; status: 'failed' };
   }
-  
+
+  // For standard errors or other values, create a simple error response
+  const errorMessage = error instanceof Error ? error.message : String(error);
   return {
-    error: error instanceof Error ? error.message : String(error),
+    error: errorMessage,
     status: 'failed'
   };
 }
