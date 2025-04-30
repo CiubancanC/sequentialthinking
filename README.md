@@ -49,16 +49,18 @@ Handles formatting and presenting data to users or external systems:
 - Ensures readable and maintainable architecture
 - Professional-level expertise in each role
 - Dependency injection system for better testability and maintainability
+- **NEW**: Integration with Google's Gemini 2.5 Flash Preview model for enhanced responses
 
 ## Tools
 
 ### rolePrompt
 
-A tool that enables AI models to adopt specific professional roles for enhanced problem-solving.
+A tool that enables AI models to adopt specific professional roles for enhanced problem-solving. When configured with a Google API key, it can use Gemini 2.5 Flash Preview to provide even more detailed and accurate responses.
 
 **Inputs:**
 - `role` (string): The professional role to adopt (e.g., "architect", "senior-developer", "qa-engineer")
 - `context` (string): The context or problem description for the role to address
+- `scenarioId` (string, optional): ID of a predefined scenario to use for additional context
 
 ## Usage
 
@@ -68,6 +70,7 @@ The CEO MCP tools are designed for:
 - Improving software development processes with expert-level guidance
 - Ensuring early detection and prevention of bugs
 - Promoting readable and maintainable architecture
+- Providing AI-enhanced responses with deeper technical insights (with Gemini integration)
 
 ## Configuration
 
@@ -333,6 +336,27 @@ The documentation server will be available at:
 - Request and response schemas
 - Example requests and responses
 
+## Gemini Integration
+
+The server can be configured to use Google's Gemini 2.5 Flash Preview model to enhance responses. This provides more detailed, accurate, and technically rich responses for all roles.
+
+### Configuration
+
+1. Get a Google API key from the [Google AI Studio](https://makersuite.google.com/)
+2. Create a `.env` file based on the `.env.example` template:
+
+```
+# Google API key for Gemini integration
+GOOGLE_API_KEY=your_google_api_key_here
+
+# Whether to use Gemini for enhanced responses
+USE_GEMINI=true
+```
+
+3. Restart the server to apply the changes
+
+When Gemini integration is enabled, responses will include an additional `enhancedResponse` field with the AI-generated content.
+
 ## Example Usage
 
 Here's an example of how to use the rolePrompt tool:
@@ -344,11 +368,12 @@ Here's an example of how to use the rolePrompt tool:
 }
 ```
 
-Response:
+Response (with Gemini integration enabled):
 
 ```json
 {
   "rolePrompt": "As a senior architect, I'll design a scalable microservice architecture for an e-commerce platform...",
+  "enhancedResponse": "Detailed analysis and recommendations from Gemini 2.5 Flash Preview...",
   "recommendations": [
     "Use API Gateway for client communication",
     "Implement event-driven communication between services",

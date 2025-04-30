@@ -8,11 +8,13 @@ export const ROLE_PROMPT_TOOL: Tool = {
   name: "rolePrompt",
   description: `A tool that enables AI models to adopt specific professional roles for enhanced problem-solving.
 This tool allows you to specify a professional role and a context or problem for the role to address.
+When configured, it can use Google's Gemini 2.5 Flash Preview model to provide even more detailed and accurate responses.
 
 When to use this tool:
 - When you need expert guidance from a specific professional perspective
 - When you want to approach a problem with a specific role's expertise
 - When you need to systematically divide tasks among different roles
+- When you want AI-enhanced responses with deeper technical insights
 
 Available roles (use EXACTLY these role names):
 - architect: For system design, architecture decisions, and technical planning
@@ -35,7 +37,13 @@ Parameters explained:
 You should:
 1. Choose the most appropriate role for your current need
 2. Provide a clear and detailed context describing the problem or situation
-3. Use the response to guide your approach to the problem`,
+3. Use the response to guide your approach to the problem
+
+When Gemini integration is enabled, you'll receive an enhanced response with:
+- More detailed technical analysis
+- More specific and actionable recommendations
+- More comprehensive code examples and solutions
+- Better tailored guidance for your specific context`,
   inputSchema: {
     type: "object",
     properties: {

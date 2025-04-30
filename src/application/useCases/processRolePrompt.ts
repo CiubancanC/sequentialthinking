@@ -1,6 +1,8 @@
 import { IRoleService } from "../../domain/interfaces/roleInterfaces.js";
+import { IAiModelService } from "../../domain/interfaces/aiModelInterfaces.js";
 import { IProcessRolePromptUseCase, ProcessRolePromptResult } from "../interfaces/useCaseInterfaces.js";
 import { RolePromptRequestDto, RolePromptResponseDto } from "../dtos/rolePromptDto.js";
+import { Logger } from "../../utils/logger.js";
 
 /**
  * Use case for processing role prompts.
@@ -9,8 +11,12 @@ export class ProcessRolePromptUseCase implements IProcessRolePromptUseCase {
   /**
    * Creates a new ProcessRolePromptUseCase instance.
    * @param roleService The role service to use
+   * @param aiModelService The AI model service to use
    */
-  constructor(private readonly roleService: IRoleService) {}
+  constructor(
+    private readonly roleService: IRoleService,
+    private readonly aiModelService: IAiModelService
+  ) {}
 
   /**
    * Executes the use case.
@@ -42,6 +48,28 @@ export class ProcessRolePromptUseCase implements IProcessRolePromptUseCase {
         roleName: role.name,
         status: 'success'
       };
+
+      // Try to enhance the response with Gemini if available
+      try {
+        if (this.aiModelService.isAvailable()) {
+          Logger.debug(`Enhancing response with Gemini for role: ${role.name}`);
+
+          const enhancedResponse = await this.aiModelService.generateEnhancedResponse({
+            roleName: role.name,
+            context: input.context,
+            originalPrompt: rolePrompt
+          });
+
+          if (enhancedResponse) {
+            // Add the enhanced response to the response object
+            response.enhancedResponse = enhancedResponse;
+            Logger.debug('Successfully generated enhanced response with Gemini');
+          }
+        }
+      } catch (error) {
+        // Don't fail the request if Gemini enhancement fails, just log the error
+        Logger.error('Error enhancing response with Gemini:', Logger.formatError(error));
+      }
 
       // Add role-specific fields based on the role name
       switch (role.name.toLowerCase()) {

@@ -46,6 +46,46 @@ export const config = {
   },
 
   /**
+   * AI model configuration.
+   */
+  ai: {
+    /**
+     * Whether to use Gemini for enhanced responses.
+     */
+    useGemini: process.env.USE_GEMINI === "true",
+
+    /**
+     * Gemini model configuration.
+     */
+    gemini: {
+      /**
+       * The model to use.
+       */
+      model: "gemini-2.5-flash-preview-04-17",
+
+      /**
+       * The maximum number of tokens to generate.
+       */
+      maxTokens: 1024,
+
+      /**
+       * The temperature for text generation (0.0 to 1.0).
+       */
+      temperature: 0.4,
+
+      /**
+       * The top-k value for sampling.
+       */
+      topK: 40,
+
+      /**
+       * The top-p value for sampling.
+       */
+      topP: 0.95
+    }
+  },
+
+  /**
    * Role configuration.
    */
   roles: {
