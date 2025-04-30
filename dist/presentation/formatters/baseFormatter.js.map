@@ -1,1 +1,0 @@
-{"version":3,"file":"baseFormatter.js","sourceRoot":"","sources":["../../../src/presentation/formatters/baseFormatter.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,YAAY,EAAE,MAAM,2BAA2B,CAAC;AAEzD;;GAEG;AACH,MAAM,OAAgB,aAAa;IACjC;;;;OAIG;IACI,MAAM,CAAC,kBAAkB,CAAC,QAAa;QAC5C,OAAO,YAAY,CAAC,QAAQ,CAAC,CAAC;IAChC,CAAC;CACF"}
