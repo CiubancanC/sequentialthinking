@@ -1,36 +1,27 @@
+import { z } from "zod";
 import { RolePromptRequestDto } from "../../application/dtos/rolePromptDto.js";
+import { validateWithSchema } from "../../utils/validation.js";
+import { ValidationError } from "../../utils/errors.js";
+
+/**
+ * Zod schema for validating role prompt request data.
+ */
+export const rolePromptSchema = z.object({
+  role: z.string().min(1, "Role is required"),
+  context: z.string().min(1, "Context is required"),
+  scenarioId: z.string().optional()
+});
 
 /**
  * Validates the input data for a role prompt request.
  * @param data The data to validate
  * @returns The validated data
- * @throws Error if the data is invalid
+ * @throws ValidationError if the data is invalid
  */
 export function validateRolePromptData(data: unknown): RolePromptRequestDto {
-  if (!data || typeof data !== 'object') {
-    throw new Error('Invalid input: expected an object');
+  try {
+    return validateWithSchema(rolePromptSchema, data, "Invalid role prompt data");
+  } catch (error) {
+    throw new ValidationError(error instanceof Error ? error.message : String(error));
   }
-
-  const input = data as Record<string, unknown>;
-
-  // Validate role
-  if (!input.role || typeof input.role !== 'string') {
-    throw new Error('Invalid input: role must be a non-empty string');
-  }
-
-  // Validate context
-  if (!input.context || typeof input.context !== 'string') {
-    throw new Error('Invalid input: context must be a non-empty string');
-  }
-
-  // Validate optional scenarioId
-  if (input.scenarioId !== undefined && (typeof input.scenarioId !== 'string' || input.scenarioId === '')) {
-    throw new Error('Invalid input: scenarioId must be a non-empty string if provided');
-  }
-
-  return {
-    role: input.role,
-    context: input.context,
-    scenarioId: input.scenarioId as string | undefined
-  };
 }

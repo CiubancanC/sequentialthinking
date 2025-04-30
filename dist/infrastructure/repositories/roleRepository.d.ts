@@ -9,6 +9,7 @@ export declare class InMemoryRoleRepository implements IRoleRepository {
     private roles;
     private scenarios;
     private responses;
+    private roleLookupService;
     /**
      * Creates a new InMemoryRoleRepository instance with predefined roles and scenarios.
      */
@@ -19,7 +20,6 @@ export declare class InMemoryRoleRepository implements IRoleRepository {
      * @returns The role if found, null otherwise
      */
     getRoleById(id: string): Promise<Role | null>;
-    private roleAliases;
     /**
      * Gets a role by its name or ID.
      * @param name The role name or ID

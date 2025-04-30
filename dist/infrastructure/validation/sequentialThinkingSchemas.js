@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { validateWithSchema } from "../../utils/validation.js";
+import { ValidationError } from "../../utils/errors.js";
 /**
  * Zod schema for validating sequential thinking request data.
  */
@@ -10,17 +12,14 @@ export const sequentialThinkingSchema = z.object({
  * Validates sequential thinking request data.
  * @param data The data to validate
  * @returns The validated data
- * @throws Error if validation fails
+ * @throws ValidationError if validation fails
  */
 export function validateSequentialThinkingData(data) {
     try {
-        return sequentialThinkingSchema.parse(data);
+        return validateWithSchema(sequentialThinkingSchema, data, "Invalid sequential thinking data");
     }
     catch (error) {
-        if (error instanceof z.ZodError) {
-            throw new Error(`Invalid sequential thinking data: ${error.errors.map(e => e.message).join(", ")}`);
-        }
-        throw new Error("Invalid sequential thinking data");
+        throw new ValidationError(error instanceof Error ? error.message : String(error));
     }
 }
 //# sourceMappingURL=sequentialThinkingSchemas.js.map

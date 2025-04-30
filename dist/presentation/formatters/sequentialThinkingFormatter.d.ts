@@ -1,9 +1,9 @@
-import { SequentialThinkingResponseDto, SequentialThinkingErrorDto } from "../../application/useCases/processSequentialThinking.js";
 import { Role } from "../../domain/models/role.js";
+import { BaseFormatter } from "./baseFormatter.js";
 /**
  * Formatter for sequential thinking outputs.
  */
-export declare class SequentialThinkingFormatter {
+export declare class SequentialThinkingFormatter extends BaseFormatter {
     /**
      * Formats a sequential thinking response for console display.
      * @param steps The steps in the sequential thinking workflow
@@ -15,10 +15,4 @@ export declare class SequentialThinkingFormatter {
         context: string;
         output?: string;
     }[], context: string): string;
-    /**
-     * Formats a sequential thinking response as JSON.
-     * @param response The sequential thinking response or error
-     * @returns A JSON string
-     */
-    static formatOutputToJson(response: SequentialThinkingResponseDto | SequentialThinkingErrorDto): string;
 }

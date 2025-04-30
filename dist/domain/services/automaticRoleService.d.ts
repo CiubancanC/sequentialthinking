@@ -36,6 +36,11 @@ export declare class AutomaticRoleServiceImpl implements IAutomaticRoleService {
      */
     constructor(repository: IRoleRepository);
     /**
+     * Gets the default role.
+     * @returns The default role if available, null otherwise
+     */
+    private getDefaultRole;
+    /**
      * Automatically selects the most appropriate role based on the context.
      * @param context The context or problem description
      * @returns The selected role, or a default role if no appropriate role is found

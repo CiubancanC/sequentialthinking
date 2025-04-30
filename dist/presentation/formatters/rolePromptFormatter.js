@@ -1,7 +1,9 @@
+import { formatAsList, truncateString } from "../../utils/formatting.js";
+import { BaseFormatter } from "./baseFormatter.js";
 /**
  * Formatter for role prompt responses.
  */
-export class RolePromptFormatter {
+export class RolePromptFormatter extends BaseFormatter {
     /**
      * Formats a role prompt response for console display.
      * @param role The role that generated the response
@@ -12,23 +14,15 @@ export class RolePromptFormatter {
         return `
 === Role Prompt Request ===
 Role: ${role.name}
-Context: ${context}
+Context: ${truncateString(context, 200)}
 
 === Role Information ===
 Description: ${role.description}
 Responsibilities:
-${role.responsibilities.map(r => `  - ${r}`).join('\n')}
+${formatAsList(role.responsibilities, '  - ')}
 Expertise:
-${role.expertise.map(e => `  - ${e}`).join('\n')}
+${formatAsList(role.expertise, '  - ')}
 `;
-    }
-    /**
-     * Formats a role prompt response as JSON.
-     * @param response The response to format
-     * @returns A JSON string representation of the response
-     */
-    static formatOutputToJson(response) {
-        return JSON.stringify(response, null, 2);
     }
 }
 //# sourceMappingURL=rolePromptFormatter.js.map

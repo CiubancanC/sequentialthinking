@@ -17,6 +17,6 @@ export declare const sequentialThinkingSchema: z.ZodObject<{
  * Validates sequential thinking request data.
  * @param data The data to validate
  * @returns The validated data
- * @throws Error if validation fails
+ * @throws ValidationError if validation fails
  */
 export declare function validateSequentialThinkingData(data: unknown): SequentialThinkingRequestDto;
