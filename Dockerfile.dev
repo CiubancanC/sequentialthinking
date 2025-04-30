@@ -3,29 +3,27 @@ FROM node:22-alpine
 
 WORKDIR /app
 
-# Copy package files
-COPY package.json ./
-COPY pnpm-lock.yaml ./
-
-# Install all dependencies (including devDependencies)
-RUN npm install
+# Set environment variables
+ENV NODE_ENV=development
+ENV DEBUG=true
+ENV LOG_LEVEL=DEBUG
 
 # Install nodemon globally for better hot reloading
 RUN npm install -g nodemon
 
+# Copy package files and install dependencies
+COPY package.json ./
+COPY pnpm-lock.yaml ./
+RUN npm install
+
 # Copy configuration files
 COPY tsconfig.json ./
 COPY nodemon.json ./
+COPY nodemon.ts.json ./
 
 # We don't copy src here because we'll mount it as a volume
 # This allows for hot reloading without rebuilding the container
 
-# Set NODE_ENV to development
-ENV NODE_ENV=development
-
-# Expose port if needed (though MCP server uses stdio)
-# EXPOSE 3000
-
 # Start the server in development mode with hot reloading
-# Using nodemon directly for better control
-CMD ["nodemon", "--watch", "src", "--ext", "ts", "--exec", "npm run dev:ts"]
+# Using nodemon with direct ts-node execution for better reliability
+CMD ["nodemon", "--watch", "src", "--ext", "ts,json", "--exec", "node --loader ts-node/esm src/index.ts"]

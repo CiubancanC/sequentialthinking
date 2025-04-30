@@ -1,0 +1,3318 @@
+
+================================================================================
+FILE: config/index.ts
+================================================================================
+/**
+ * Application configuration.
+ * This file contains configuration values for the application.
+ */
+export const config = {
+  /**
+   * Server configuration.
+   */
+  server: {
+    /**
+     * The name of the server.
+     */
+    name: "fidora-server",
+
+    /**
+     * The version of the server.
+     */
+    version: "1.0.0",
+  },
+
+  /**
+   * Logging configuration.
+   */
+  logging: {
+    /**
+     * Whether to enable debug logging.
+     */
+    debug: process.env.DEBUG === "true",
+
+    /**
+     * Whether to enable colorized output.
+     */
+    colorize: true,
+  },
+};
+
+export default config;
+
+
+================================================================================
+FILE: crawl-files.js
+================================================================================
+import fs from 'fs';
+import path from 'path';
+import ignore from 'ignore';
+
+// Function to read the .gitignore file and create an ignore filter
+function createIgnoreFilter() {
+  try {
+    const gitignoreContent = fs.readFileSync('.gitignore', 'utf8');
+    const ig = ignore().add(gitignoreContent);
+
+    // Always ignore node_modules and .git directories
+    ig.add('node_modules/**');
+    ig.add('.git/**');
+
+    return ig;
+  } catch (error) {
+    console.error('Error reading .gitignore file:', error.message);
+    // If .gitignore doesn't exist, create a default filter that ignores common directories
+    return ignore().add(['node_modules/**', '.git/**']);
+  }
+}
+
+// Function to recursively walk through directories
+async function walkDirectory(dir, ignoreFilter, relativePath = '') {
+  const files = [];
+
+  try {
+    const entries = await fs.promises.readdir(dir, { withFileTypes: true });
+
+    for (const entry of entries) {
+      const entryPath = path.join(dir, entry.name);
+      const entryRelativePath = path.join(relativePath, entry.name);
+
+      if (entry.isDirectory()) {
+        // Recursively walk subdirectories
+        const subDirFiles = await walkDirectory(entryPath, ignoreFilter, entryRelativePath);
+        files.push(...subDirFiles);
+      } else if (entry.isFile()) {
+        // Check if the file should be ignored
+        if (!ignoreFilter.ignores(entryRelativePath)) {
+          files.push(entryRelativePath);
+        }
+      }
+    }
+  } catch (error) {
+    console.error(`Error reading directory ${dir}:`, error.message);
+  }
+
+  return files;
+}
+
+// Function to read file content
+async function readFileContent(filePath) {
+  try {
+    return await fs.promises.readFile(filePath, 'utf8');
+  } catch (error) {
+    console.error(`Error reading file ${filePath}:`, error.message);
+    return `[Error reading file: ${error.message}]`;
+  }
+}
+
+// Main function
+async function main() {
+  const ignoreFilter = createIgnoreFilter();
+  const files = await walkDirectory('.', ignoreFilter);
+
+  let resultContent = '';
+
+  for (const file of files) {
+    // Include JavaScript, JSX, TypeScript, and TSX files
+    if (!file.endsWith('.js') && !file.endsWith('.jsx') &&
+        !file.endsWith('.ts') && !file.endsWith('.tsx')) {
+      continue;
+    }
+    console.log(`Processing: ${file}`);
+    const content = await readFileContent(file);
+
+    resultContent += `\n${'='.repeat(80)}\n`;
+    resultContent += `FILE: ${file}\n`;
+    resultContent += `${'='.repeat(80)}\n`;
+    resultContent += content;
+    resultContent += '\n';
+  }
+
+  // Write the result to result.txt
+  await fs.promises.writeFile('result.txt', resultContent);
+  console.log(`\nCompleted! Found ${files.length} files. Results saved to result.txt`);
+}
+
+main().catch(error => {
+  console.error('An error occurred:', error);
+  process.exit(1);
+});
+
+
+================================================================================
+FILE: src/application/dtos/rolePromptDto.ts
+================================================================================
+/**
+ * Data Transfer Object for role prompt requests.
+ */
+export interface RolePromptRequestDto {
+  /**
+   * The name of the role to adopt.
+   */
+  role: string;
+
+  /**
+   * The context or problem description for the role to address.
+   */
+  context: string;
+
+  /**
+   * Optional scenario ID to use for additional context.
+   */
+  scenarioId?: string;
+}
+
+/**
+ * Data Transfer Object for role prompt responses.
+ */
+export interface RolePromptResponseDto {
+  /**
+   * The role prompt generated for the AI.
+   */
+  rolePrompt: string;
+
+  /**
+   * The name of the role.
+   */
+  roleName: string;
+
+  /**
+   * Recommendations provided by the role.
+   */
+  recommendations?: string[];
+
+  /**
+   * Next steps suggested by the role.
+   */
+  nextSteps?: string[];
+
+  /**
+   * Testing approach (for QA engineer role).
+   */
+  testingApproach?: string[];
+
+  /**
+   * Risk assessment (for QA engineer role).
+   */
+  riskAssessment?: string[];
+
+  /**
+   * Architecture components (for architect role).
+   */
+  architectureComponents?: string[];
+
+  /**
+   * Code examples (for developer role).
+   */
+  codeExamples?: string[];
+
+  /**
+   * Security controls (for security engineer role).
+   */
+  securityControls?: string[];
+
+  /**
+   * Analytical approach (for data scientist role).
+   */
+  analyticalApproach?: string[];
+
+  /**
+   * Design principles (for UX designer role).
+   */
+  designPrinciples?: string[];
+
+  /**
+   * Product strategy (for product manager role).
+   */
+  productStrategy?: string[];
+
+  /**
+   * Error message if the request failed.
+   */
+  error?: string;
+
+  /**
+   * Status of the response.
+   */
+  status: 'success' | 'failed';
+}
+
+
+================================================================================
+FILE: src/application/useCases/processRolePrompt.ts
+================================================================================
+import { IRoleService } from "../../domain/interfaces/roleInterfaces.js";
+import { RolePromptRequestDto, RolePromptResponseDto } from "../dtos/rolePromptDto.js";
+
+/**
+ * Result of processing a role prompt.
+ */
+export type ProcessRolePromptResult = {
+  data?: RolePromptResponseDto;
+  error?: {
+    error: string;
+    status: 'failed';
+  };
+};
+
+/**
+ * Use case for processing role prompts.
+ */
+export class ProcessRolePromptUseCase {
+  /**
+   * Creates a new ProcessRolePromptUseCase instance.
+   * @param roleService The role service to use
+   */
+  constructor(private readonly roleService: IRoleService) {}
+
+  /**
+   * Executes the use case.
+   * @param input The role prompt request
+   * @returns The result of processing the role prompt
+   */
+  async execute(input: RolePromptRequestDto): Promise<ProcessRolePromptResult> {
+    try {
+      // Check if the role exists
+      const role = await this.roleService.getRoleByName(input.role);
+      if (!role) {
+        return {
+          error: {
+            error: `Role not found: ${input.role}`,
+            status: 'failed'
+          }
+        };
+      }
+
+      // Generate the role prompt
+      const rolePrompt = await this.roleService.generateRolePrompt(
+        input.role,
+        input.context
+      );
+
+      // Create a response based on the role
+      const response: RolePromptResponseDto = {
+        rolePrompt,
+        roleName: role.name,
+        status: 'success'
+      };
+
+      // Add role-specific fields based on the role name
+      switch (role.name.toLowerCase()) {
+        case 'architect':
+          response.recommendations = [
+            'Design with scalability in mind',
+            'Use appropriate design patterns',
+            'Consider security from the start'
+          ];
+          response.nextSteps = [
+            'Create detailed architecture diagrams',
+            'Document key design decisions',
+            'Review with stakeholders'
+          ];
+          response.architectureComponents = [
+            'API Gateway',
+            'Microservices',
+            'Data storage',
+            'Authentication service'
+          ];
+          response.codeExamples = [
+            '```text\n# Architecture Diagram (ASCII)\n\n+----------------+     +-------------------+\n|                |     |                   |\n|  Client App    |---->|   API Gateway     |\n|  (Next.js)     |     |                   |\n+----------------+     +-------------------+\n                              |\n                              v\n+----------------+     +-------------------+     +-------------------+\n|                |     |                   |     |                   |\n|  Auth Service  |<--->|  User Service     |---->|  Database         |\n|                |     |                   |     |  (PostgreSQL)     |\n+----------------+     +-------------------+     +-------------------+\n```',
+            '```javascript\n// Next.js API route that acts as a gateway\nexport default async function handler(req, res) {\n  // Authenticate the request\n  const token = req.headers.authorization?.split(" ")[1];\n  if (!token) {\n    return res.status(401).json({ error: "Unauthorized" });\n  }\n\n  try {\n    // Verify the token\n    const user = await verifyToken(token);\n    \n    // Route the request to the appropriate microservice\n    const path = req.url.split("/api/")[1];\n    \n    if (path.startsWith("users")) {\n      // Forward to user service\n      const response = await fetch(`${process.env.USER_SERVICE_URL}/${path}`, {\n        method: req.method,\n        headers: {\n          "Content-Type": "application/json",\n          "X-User-Id": user.id\n        },\n        body: req.method !== "GET" ? JSON.stringify(req.body) : undefined\n      });\n      \n      const data = await response.json();\n      return res.status(response.status).json(data);\n    }\n    \n    // Handle other services...\n    \n    return res.status(404).json({ error: "Service not found" });\n  } catch (error) {\n    return res.status(500).json({ error: "Internal server error" });\n  }\n}\n```',
+            '```yaml\n# Docker Compose configuration for the architecture\nversion: "3.8"\n\nservices:\n  nextjs-app:\n    build: ./client\n    ports:\n      - "3000:3000"\n    environment:\n      - API_URL=http://api-gateway:4000\n\n  api-gateway:\n    build: ./api-gateway\n    ports:\n      - "4000:4000"\n    environment:\n      - AUTH_SERVICE_URL=http://auth-service:4001\n      - USER_SERVICE_URL=http://user-service:4002\n\n  auth-service:\n    build: ./auth-service\n    ports:\n      - "4001:4001"\n    environment:\n      - DATABASE_URL=postgres://user:password@db:5432/auth\n      - JWT_SECRET=your-secret-key\n\n  user-service:\n    build: ./user-service\n    ports:\n      - "4002:4002"\n    environment:\n      - DATABASE_URL=postgres://user:password@db:5432/users\n\n  db:\n    image: postgres:14\n    ports:\n      - "5432:5432"\n    environment:\n      - POSTGRES_USER=user\n      - POSTGRES_PASSWORD=password\n      - POSTGRES_MULTIPLE_DATABASES=auth,users\n    volumes:\n      - postgres-data:/var/lib/postgresql/data\n\nvolumes:\n  postgres-data:\n```'
+          ];
+          break;
+        case 'senior developer':
+        case 'developer':
+          response.recommendations = [
+            'Follow clean code principles',
+            'Write comprehensive tests',
+            'Document your code'
+          ];
+          response.nextSteps = [
+            'Implement core functionality',
+            'Write unit tests',
+            'Perform code review'
+          ];
+          response.codeExamples = [
+            '```javascript\n// Example implementation of a Next.js API route for authentication\nexport default async function handler(req, res) {\n  if (req.method === "POST") {\n    const { email, password } = req.body;\n    \n    try {\n      // Validate user credentials\n      const user = await validateUser(email, password);\n      \n      if (user) {\n        // Create session or JWT token\n        const token = generateToken(user);\n        res.status(200).json({ token, user: { id: user.id, email: user.email } });\n      } else {\n        res.status(401).json({ error: "Invalid credentials" });\n      }\n    } catch (error) {\n      res.status(500).json({ error: "Authentication failed" });\n    }\n  } else {\n    res.setHeader("Allow", ["POST"]);\n    res.status(405).end(`Method ${req.method} Not Allowed`);\n  }\n}\n```',
+            '```javascript\n// Example of a React login component\nimport { useState } from "react";\nimport { useRouter } from "next/router";\n\nexport default function Login() {\n  const [email, setEmail] = useState("");\n  const [password, setPassword] = useState("");\n  const [error, setError] = useState("");\n  const router = useRouter();\n\n  async function handleSubmit(e) {\n    e.preventDefault();\n    setError("");\n    \n    try {\n      const response = await fetch("/api/auth/login", {\n        method: "POST",\n        headers: { "Content-Type": "application/json" },\n        body: JSON.stringify({ email, password }),\n      });\n      \n      const data = await response.json();\n      \n      if (!response.ok) {\n        throw new Error(data.error || "Login failed");\n      }\n      \n      // Store token in localStorage or cookies\n      localStorage.setItem("token", data.token);\n      \n      // Redirect to dashboard\n      router.push("/dashboard");\n    } catch (err) {\n      setError(err.message);\n    }\n  }\n\n  return (\n    <div className="login-container">\n      <h1>Login</h1>\n      {error && <p className="error">{error}</p>}\n      <form onSubmit={handleSubmit}>\n        <div className="form-group">\n          <label htmlFor="email">Email</label>\n          <input\n            type="email"\n            id="email"\n            value={email}\n            onChange={(e) => setEmail(e.target.value)}\n            required\n          />\n        </div>\n        <div className="form-group">\n          <label htmlFor="password">Password</label>\n          <input\n            type="password"\n            id="password"\n            value={password}\n            onChange={(e) => setPassword(e.target.value)}\n            required\n          />\n        </div>\n        <button type="submit">Login</button>\n      </form>\n    </div>\n  );\n}\n```',
+            '```javascript\n// Example of a database connection utility\nimport { Pool } from "pg";\n\nlet pool;\n\nif (!pool) {\n  pool = new Pool({\n    user: process.env.DB_USER,\n    password: process.env.DB_PASSWORD,\n    host: process.env.DB_HOST,\n    port: parseInt(process.env.DB_PORT || "5432"),\n    database: process.env.DB_NAME,\n  });\n}\n\nexport async function query(text, params) {\n  const client = await pool.connect();\n  try {\n    const result = await client.query(text, params);\n    return result;\n  } finally {\n    client.release();\n  }\n}\n\nexport async function getUserByEmail(email) {\n  const result = await query("SELECT * FROM users WHERE email = $1", [email]);\n  return result.rows[0];\n}\n\nexport async function createUser(email, hashedPassword) {\n  const result = await query(\n    "INSERT INTO users (email, password) VALUES ($1, $2) RETURNING id, email",\n    [email, hashedPassword]\n  );\n  return result.rows[0];\n}\n```'
+          ];
+          break;
+        case 'qa engineer':
+          response.testingApproach = [
+            'Unit testing for all components',
+            'Integration testing for service interactions',
+            'End-to-end testing for critical flows',
+            'Performance testing under load'
+          ];
+          response.riskAssessment = [
+            'Potential failure points',
+            'Security vulnerabilities',
+            'Performance bottlenecks'
+          ];
+          response.nextSteps = [
+            'Create test plan',
+            'Implement test cases',
+            'Set up CI/CD pipeline for testing'
+          ];
+          response.codeExamples = [
+            '```javascript\n// Unit test for login API using Jest\nimport { handler } from "../pages/api/auth/login";\nimport { validateUser, generateToken } from "../lib/auth";\n\n// Mock dependencies\njest.mock("../lib/auth", () => ({\n  validateUser: jest.fn(),\n  generateToken: jest.fn(),\n}));\n\ndescribe("Login API", () => {\n  let req, res;\n\n  beforeEach(() => {\n    req = {\n      method: "POST",\n      body: { email: "test@example.com", password: "password123" },\n    };\n    res = {\n      status: jest.fn().mockReturnThis(),\n      json: jest.fn(),\n      setHeader: jest.fn(),\n      end: jest.fn(),\n    };\n  });\n\n  afterEach(() => {\n    jest.clearAllMocks();\n  });\n\n  test("returns 405 for non-POST requests", async () => {\n    req.method = "GET";\n    await handler(req, res);\n    expect(res.setHeader).toHaveBeenCalledWith("Allow", ["POST"]);\n    expect(res.status).toHaveBeenCalledWith(405);\n    expect(res.end).toHaveBeenCalled();\n  });\n\n  test("returns 401 for invalid credentials", async () => {\n    validateUser.mockResolvedValue(null);\n    await handler(req, res);\n    expect(validateUser).toHaveBeenCalledWith("test@example.com", "password123");\n    expect(res.status).toHaveBeenCalledWith(401);\n    expect(res.json).toHaveBeenCalledWith({ error: "Invalid credentials" });\n  });\n\n  test("returns 200 with token for valid credentials", async () => {\n    const mockUser = { id: "123", email: "test@example.com" };\n    const mockToken = "jwt-token";\n    validateUser.mockResolvedValue(mockUser);\n    generateToken.mockReturnValue(mockToken);\n\n    await handler(req, res);\n\n    expect(validateUser).toHaveBeenCalledWith("test@example.com", "password123");\n    expect(generateToken).toHaveBeenCalledWith(mockUser);\n    expect(res.status).toHaveBeenCalledWith(200);\n    expect(res.json).toHaveBeenCalledWith({\n      token: mockToken,\n      user: { id: mockUser.id, email: mockUser.email },\n    });\n  });\n\n  test("returns 500 when an error occurs", async () => {\n    validateUser.mockRejectedValue(new Error("Database error"));\n    await handler(req, res);\n    expect(res.status).toHaveBeenCalledWith(500);\n    expect(res.json).toHaveBeenCalledWith({ error: "Authentication failed" });\n  });\n});\n```',
+            '```javascript\n// E2E test for login flow using Cypress\ndescribe("Login Flow", () => {\n  beforeEach(() => {\n    // Reset database or mock API responses\n    cy.intercept("POST", "/api/auth/login", (req) => {\n      // Mock successful login for test@example.com\n      if (req.body.email === "test@example.com" && req.body.password === "password123") {\n        req.reply({\n          statusCode: 200,\n          body: {\n            token: "fake-jwt-token",\n            user: { id: "123", email: "test@example.com" }\n          }\n        });\n      } else {\n        // Mock failed login\n        req.reply({\n          statusCode: 401,\n          body: { error: "Invalid credentials" }\n        });\n      }\n    }).as("loginRequest");\n\n    // Visit the login page\n    cy.visit("/login");\n  });\n\n  it("displays validation errors for empty fields", () => {\n    // Try to submit without entering data\n    cy.get("button[type=submit]").click();\n    \n    // Check for validation messages\n    cy.get("input:invalid").should("have.length", 2);\n  });\n\n  it("shows error message for invalid credentials", () => {\n    // Enter invalid credentials\n    cy.get("input[type=email]").type("wrong@example.com");\n    cy.get("input[type=password]").type("wrongpassword");\n    cy.get("button[type=submit]").click();\n    \n    // Wait for the API call\n    cy.wait("@loginRequest");\n    \n    // Check for error message\n    cy.get(".error").should("be.visible").and("contain", "Invalid credentials");\n  });\n\n  it("redirects to dashboard after successful login", () => {\n    // Enter valid credentials\n    cy.get("input[type=email]").type("test@example.com");\n    cy.get("input[type=password]").type("password123");\n    cy.get("button[type=submit]").click();\n    \n    // Wait for the API call\n    cy.wait("@loginRequest");\n    \n    // Check that we\'re redirected to dashboard\n    cy.url().should("include", "/dashboard");\n    \n    // Check that token is stored in localStorage\n    cy.window().its("localStorage.token").should("exist");\n  });\n});\n```',
+            '```yaml\n# GitHub Actions workflow for running tests\nname: Test Suite\n\non:\n  push:\n    branches: [ main, develop ]\n  pull_request:\n    branches: [ main, develop ]\n\njobs:\n  unit-tests:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v3\n      - name: Set up Node.js\n        uses: actions/setup-node@v3\n        with:\n          node-version: 18\n          cache: "npm"\n      - name: Install dependencies\n        run: npm ci\n      - name: Run unit tests\n        run: npm test\n\n  e2e-tests:\n    runs-on: ubuntu-latest\n    needs: unit-tests\n    steps:\n      - uses: actions/checkout@v3\n      - name: Set up Node.js\n        uses: actions/setup-node@v3\n        with:\n          node-version: 18\n          cache: "npm"\n      - name: Install dependencies\n        run: npm ci\n      - name: Build application\n        run: npm run build\n      - name: Run Cypress tests\n        uses: cypress-io/github-action@v5\n        with:\n          start: npm start\n          wait-on: "http://localhost:3000"\n          browser: chrome\n          headed: false\n```'
+          ];
+          break;
+        case 'devops engineer':
+          response.recommendations = [
+            'Automate deployment process',
+            'Implement monitoring and alerting',
+            'Use infrastructure as code'
+          ];
+          response.nextSteps = [
+            'Set up CI/CD pipeline',
+            'Configure monitoring tools',
+            'Document deployment process'
+          ];
+          response.codeExamples = [
+            '```yaml\n# Docker Compose for Next.js app with hot reloading\nversion: "3.8"\n\nservices:\n  nextjs:\n    build:\n      context: .\n      dockerfile: Dockerfile.dev\n    ports:\n      - "3000:3000"\n    volumes:\n      - ./:/app\n      - /app/node_modules\n      - /app/.next\n    environment:\n      - NODE_ENV=development\n      - DATABASE_URL=postgresql://postgres:password@db:5432/myapp\n    depends_on:\n      - db\n\n  db:\n    image: postgres:14-alpine\n    ports:\n      - "5432:5432"\n    environment:\n      - POSTGRES_USER=postgres\n      - POSTGRES_PASSWORD=password\n      - POSTGRES_DB=myapp\n    volumes:\n      - postgres-data:/var/lib/postgresql/data\n\nvolumes:\n  postgres-data:\n```',
+            '```dockerfile\n# Dockerfile.dev for Next.js with hot reloading\nFROM node:18-alpine\n\nWORKDIR /app\n\n# Install dependencies based on the preferred package manager\nCOPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* ./\nRUN \\\\n  if [ -f yarn.lock ]; then yarn --frozen-lockfile; \\\\n  elif [ -f package-lock.json ]; then npm ci; \\\\n  elif [ -f pnpm-lock.yaml ]; then yarn global add pnpm && pnpm i; \\\\n  else npm i; \\\\n  fi\n\n# Copy source files\nCOPY . .\n\n# Set environment variables\nENV NODE_ENV development\nENV PORT 3000\n\n# Expose port\nEXPOSE 3000\n\n# Start development server with hot reloading\nCMD ["npm", "run", "dev"]\n```',
+            '```yaml\n# GitHub Actions workflow for CI/CD\nname: CI/CD Pipeline\n\non:\n  push:\n    branches: [ main ]\n  pull_request:\n    branches: [ main ]\n\njobs:\n  build-and-test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v3\n      \n      - name: Set up Node.js\n        uses: actions/setup-node@v3\n        with:\n          node-version: 18\n          cache: "npm"\n          \n      - name: Install dependencies\n        run: npm ci\n        \n      - name: Run linting\n        run: npm run lint\n        \n      - name: Run tests\n        run: npm test\n        \n      - name: Build application\n        run: npm run build\n        \n      - name: Upload build artifacts\n        uses: actions/upload-artifact@v3\n        with:\n          name: build\n          path: .next\n          retention-days: 1\n\n  deploy:\n    needs: build-and-test\n    if: github.ref == \'refs/heads/main\'\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v3\n      \n      - name: Download build artifacts\n        uses: actions/download-artifact@v3\n        with:\n          name: build\n          path: .next\n          \n      - name: Set up Docker Buildx\n        uses: docker/setup-buildx-action@v2\n        \n      - name: Login to Docker Hub\n        uses: docker/login-action@v2\n        with:\n          username: ${{ secrets.DOCKER_HUB_USERNAME }}\n          password: ${{ secrets.DOCKER_HUB_TOKEN }}\n          \n      - name: Build and push Docker image\n        uses: docker/build-push-action@v4\n        with:\n          context: .\n          push: true\n          tags: yourusername/nextjs-app:latest\n          \n      - name: Deploy to production\n        run: |\n          # Add deployment commands here\n          echo "Deploying to production server..."\n```'
+          ];
+          break;
+        case 'security engineer':
+          response.recommendations = [
+            'Implement defense in depth',
+            'Follow the principle of least privilege',
+            'Conduct regular security assessments'
+          ];
+          response.nextSteps = [
+            'Perform threat modeling',
+            'Implement security controls',
+            'Conduct penetration testing'
+          ];
+          response.securityControls = [
+            'Authentication and authorization',
+            'Data encryption',
+            'Input validation',
+            'Secure coding practices',
+            'Security monitoring'
+          ];
+          break;
+        case 'data scientist':
+          response.recommendations = [
+            'Clean and preprocess data thoroughly',
+            'Use appropriate algorithms for the problem',
+            'Validate models with multiple metrics'
+          ];
+          response.nextSteps = [
+            'Collect and prepare data',
+            'Develop and train models',
+            'Evaluate and refine results'
+          ];
+          response.analyticalApproach = [
+            'Exploratory data analysis',
+            'Feature engineering',
+            'Model selection and training',
+            'Hyperparameter tuning',
+            'Model evaluation'
+          ];
+          break;
+        case 'ux designer':
+          response.recommendations = [
+            'Focus on user needs and goals',
+            'Create intuitive and accessible interfaces',
+            'Test designs with real users'
+          ];
+          response.nextSteps = [
+            'Conduct user research',
+            'Create wireframes and prototypes',
+            'Perform usability testing'
+          ];
+          response.designPrinciples = [
+            'User-centered design',
+            'Visual hierarchy',
+            'Consistency and standards',
+            'Accessibility',
+            'Feedback and affordances'
+          ];
+          break;
+        case 'product manager':
+          response.recommendations = [
+            'Align features with user needs and business goals',
+            'Prioritize based on value and effort',
+            'Communicate clearly with stakeholders'
+          ];
+          response.nextSteps = [
+            'Define product vision and strategy',
+            'Create and prioritize backlog',
+            'Coordinate with development team'
+          ];
+          response.productStrategy = [
+            'Market analysis',
+            'User personas and journeys',
+            'Feature prioritization',
+            'Roadmap planning',
+            'Success metrics'
+          ];
+          break;
+        default:
+          response.recommendations = [
+            'Analyze the problem thoroughly',
+            'Consider multiple approaches',
+            'Document your solution'
+          ];
+          response.nextSteps = [
+            'Implement the solution',
+            'Test thoroughly',
+            'Review and refine'
+          ];
+      }
+
+      return { data: response };
+    } catch (error) {
+      return {
+        error: {
+          error: error instanceof Error ? error.message : String(error),
+          status: 'failed'
+        }
+      };
+    }
+  }
+}
+
+
+================================================================================
+FILE: src/config/index.ts
+================================================================================
+/**
+ * Application configuration.
+ * This file contains centralized configuration values for the application.
+ */
+export const config = {
+  /**
+   * Server configuration.
+   */
+  server: {
+    /**
+     * The name of the server.
+     */
+    name: "fidora-server",
+
+    /**
+     * The version of the server.
+     */
+    version: "1.0.0",
+  },
+
+  /**
+   * Logging configuration.
+   */
+  logging: {
+    /**
+     * Whether to enable debug logging.
+     */
+    debug: process.env.DEBUG === "true",
+
+    /**
+     * Whether to enable colorized output.
+     */
+    colorize: true,
+  },
+
+  /**
+   * Role configuration.
+   */
+  roles: {
+    /**
+     * Default role to use when no appropriate role is found.
+     */
+    defaultRole: "architect",
+  },
+
+  /**
+   * Role keywords for automatic role selection.
+   */
+  roleKeywords: {
+    'architect': [
+      'architecture', 'design', 'system', 'structure', 'scalable',
+      'microservice', 'infrastructure', 'solution', 'framework', 'blueprint'
+    ],
+    'senior-developer': [
+      'code', 'implement', 'develop', 'programming', 'function',
+      'class', 'method', 'algorithm', 'feature', 'library', 'api'
+    ],
+    'qa-engineer': [
+      'test', 'quality', 'bug', 'issue', 'verify', 'validation',
+      'testing', 'qa', 'quality assurance', 'regression', 'defect'
+    ],
+    'devops-engineer': [
+      'deploy', 'pipeline', 'ci/cd', 'infrastructure', 'container',
+      'docker', 'kubernetes', 'automation', 'devops', 'jenkins', 'terraform'
+    ],
+    'security-engineer': [
+      'security', 'vulnerability', 'threat', 'risk', 'compliance',
+      'authentication', 'authorization', 'encryption', 'firewall', 'penetration'
+    ],
+    'data-scientist': [
+      'data', 'analytics', 'machine learning', 'ai', 'model',
+      'prediction', 'statistics', 'dataset', 'algorithm', 'neural network', 'classification'
+    ],
+    'ux-designer': [
+      'user experience', 'ui', 'ux', 'interface', 'usability',
+      'wireframe', 'prototype', 'user research', 'accessibility', 'design system'
+    ],
+    'product-manager': [
+      'product', 'roadmap', 'feature', 'requirement', 'user story',
+      'backlog', 'prioritization', 'market', 'customer', 'stakeholder'
+    ]
+  },
+
+
+};
+
+
+================================================================================
+FILE: src/config/roleData.ts
+================================================================================
+/**
+ * Configuration for predefined roles.
+ */
+export const roleData = [
+  {
+    id: 'architect',
+    name: 'Architect',
+    description: 'As an architect, I focus on designing scalable, maintainable, and secure systems that meet business requirements while following best practices and industry standards.',
+    responsibilities: [
+      'Designing system architecture',
+      'Making technology stack decisions',
+      'Ensuring scalability and performance',
+      'Defining integration patterns',
+      'Establishing coding standards and best practices'
+    ],
+    expertise: [
+      'System design patterns',
+      'Scalability and performance optimization',
+      'Security architecture',
+      'Cloud infrastructure',
+      'Microservices architecture'
+    ]
+  },
+  {
+    id: 'senior-developer',
+    name: 'Senior Developer',
+    description: 'As a senior developer, I focus on implementing robust, efficient, and maintainable code while mentoring junior developers and ensuring code quality across the team.',
+    responsibilities: [
+      'Implementing complex features',
+      'Code review and quality assurance',
+      'Mentoring junior developers',
+      'Troubleshooting and debugging',
+      'Technical documentation'
+    ],
+    expertise: [
+      'Software design patterns',
+      'Clean code principles',
+      'Test-driven development',
+      'Performance optimization',
+      'Debugging and problem-solving'
+    ]
+  },
+  {
+    id: 'qa-engineer',
+    name: 'QA Engineer',
+    description: 'As a QA engineer, I focus on ensuring software quality through comprehensive testing strategies, automated testing, and identifying potential issues before they reach production.',
+    responsibilities: [
+      'Developing test plans and strategies',
+      'Creating and executing test cases',
+      'Automating tests for regression testing',
+      'Identifying and reporting bugs',
+      'Verifying bug fixes'
+    ],
+    expertise: [
+      'Test planning and strategy',
+      'Manual and automated testing',
+      'Performance and load testing',
+      'Security testing',
+      'Test automation frameworks'
+    ]
+  },
+  {
+    id: 'devops-engineer',
+    name: 'DevOps Engineer',
+    description: 'As a DevOps engineer, I focus on streamlining development and operations processes through automation, CI/CD pipelines, and infrastructure as code to enable faster and more reliable software delivery.',
+    responsibilities: [
+      'Setting up CI/CD pipelines',
+      'Automating deployment processes',
+      'Managing cloud infrastructure',
+      'Monitoring system performance',
+      'Implementing security best practices'
+    ],
+    expertise: [
+      'CI/CD pipelines',
+      'Infrastructure as code',
+      'Containerization and orchestration',
+      'Monitoring and logging',
+      'Cloud platforms (AWS, Azure, GCP)'
+    ]
+  },
+  {
+    id: 'security-engineer',
+    name: 'Security Engineer',
+    description: 'As a security engineer, I focus on identifying and mitigating security vulnerabilities, implementing security best practices, and ensuring the overall security posture of the system.',
+    responsibilities: [
+      'Conducting security assessments',
+      'Implementing security controls',
+      'Performing vulnerability scanning',
+      'Developing security policies',
+      'Incident response planning'
+    ],
+    expertise: [
+      'Application security',
+      'Network security',
+      'Identity and access management',
+      'Threat modeling',
+      'Security compliance frameworks'
+    ]
+  },
+  {
+    id: 'data-scientist',
+    name: 'Data Scientist',
+    description: 'As a data scientist, I focus on extracting insights from data, building predictive models, and applying statistical analysis to solve complex business problems.',
+    responsibilities: [
+      'Data analysis and exploration',
+      'Feature engineering',
+      'Model development and validation',
+      'Data visualization',
+      'Communicating insights to stakeholders'
+    ],
+    expertise: [
+      'Machine learning algorithms',
+      'Statistical analysis',
+      'Data preprocessing techniques',
+      'Model evaluation metrics',
+      'Data visualization tools'
+    ]
+  },
+  {
+    id: 'ux-designer',
+    name: 'UX Designer',
+    description: 'As a UX designer, I focus on creating intuitive, accessible, and delightful user experiences through user research, interaction design, and usability testing.',
+    responsibilities: [
+      'Conducting user research',
+      'Creating user personas',
+      'Designing user flows and wireframes',
+      'Prototyping and usability testing',
+      'Collaborating with developers on implementation'
+    ],
+    expertise: [
+      'User-centered design principles',
+      'Information architecture',
+      'Interaction design patterns',
+      'Accessibility standards',
+      'Design systems'
+    ]
+  },
+  {
+    id: 'product-manager',
+    name: 'Product Manager',
+    description: 'As a product manager, I focus on defining product vision, prioritizing features, and coordinating cross-functional teams to deliver products that meet user needs and business goals.',
+    responsibilities: [
+      'Defining product vision and strategy',
+      'Gathering and prioritizing requirements',
+      'Creating product roadmaps',
+      'Coordinating with development teams',
+      'Analyzing market trends and user feedback'
+    ],
+    expertise: [
+      'Product lifecycle management',
+      'Agile methodologies',
+      'Market analysis',
+      'User story creation',
+      'Product metrics and KPIs'
+    ]
+  }
+];
+
+/**
+ * Configuration for predefined scenarios.
+ */
+export const scenarioData: Array<{
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  complexity: 'low' | 'medium' | 'high';
+  suggestedRoles: string[];
+}> = [
+  {
+    id: 'arch-001',
+    title: 'Design a Scalable E-commerce Platform',
+    description: 'Design a scalable microservice architecture for an e-commerce platform that can handle high traffic during sales events and provide a seamless shopping experience.',
+    category: 'architecture',
+    complexity: 'high',
+    suggestedRoles: ['Architect', 'DevOps Engineer']
+  },
+  {
+    id: 'dev-001',
+    title: 'Implement a Payment Processing System',
+    description: 'Implement a secure payment processing system that integrates with multiple payment gateways and handles various payment methods while ensuring PCI compliance.',
+    category: 'development',
+    complexity: 'medium',
+    suggestedRoles: ['Senior Developer', 'QA Engineer']
+  },
+  {
+    id: 'qa-001',
+    title: 'Develop a Testing Strategy for a New Feature',
+    description: 'Develop a comprehensive testing strategy for a new feature that includes user authentication, data processing, and integration with third-party services.',
+    category: 'testing',
+    complexity: 'medium',
+    suggestedRoles: ['QA Engineer', 'Senior Developer']
+  },
+  {
+    id: 'devops-001',
+    title: 'Set Up a CI/CD Pipeline for a Microservice Architecture',
+    description: 'Set up a CI/CD pipeline for a microservice architecture that includes automated testing, deployment, and monitoring across multiple environments.',
+    category: 'devops',
+    complexity: 'high',
+    suggestedRoles: ['DevOps Engineer', 'Architect']
+  },
+  {
+    id: 'sec-001',
+    title: 'Conduct a Security Assessment of a Web Application',
+    description: 'Conduct a comprehensive security assessment of a web application, identify vulnerabilities, and recommend security controls to mitigate risks.',
+    category: 'security',
+    complexity: 'high',
+    suggestedRoles: ['Security Engineer', 'Architect']
+  },
+  {
+    id: 'data-001',
+    title: 'Build a Recommendation System',
+    description: 'Build a recommendation system that analyzes user behavior and preferences to suggest relevant products or content, improving user engagement and conversion rates.',
+    category: 'data-science',
+    complexity: 'medium',
+    suggestedRoles: ['Data Scientist', 'Senior Developer']
+  },
+  {
+    id: 'ux-001',
+    title: 'Redesign a Mobile App Interface',
+    description: 'Redesign the user interface of a mobile app to improve usability, accessibility, and user satisfaction based on user feedback and analytics data.',
+    category: 'ux-design',
+    complexity: 'medium',
+    suggestedRoles: ['UX Designer', 'Product Manager']
+  },
+  {
+    id: 'prod-001',
+    title: 'Develop a Product Roadmap for a SaaS Platform',
+    description: 'Develop a comprehensive product roadmap for a SaaS platform, prioritizing features based on user needs, market trends, and business goals.',
+    category: 'product-management',
+    complexity: 'high',
+    suggestedRoles: ['Product Manager', 'Architect']
+  }
+];
+
+/**
+ * Role aliases mapping.
+ */
+export const roleAliases: Record<string, string[]> = {
+  'architect': [
+    'system architect',
+    'software architect',
+    'solution architect',
+    'technical architect',
+    'enterprise architect',
+    'application architect',
+    'infrastructure architect',
+    'cloud architect',
+    'systems architect',
+    'software system architect'
+  ],
+  'senior-developer': [
+    'senior software developer',
+    'senior programmer',
+    'senior software engineer',
+    'lead developer',
+    'principal developer',
+    'senior coder',
+    'senior engineer',
+    'tech lead',
+    'software development lead',
+    'principal engineer'
+  ],
+  'qa-engineer': [
+    'quality assurance engineer',
+    'test engineer',
+    'quality engineer',
+    'software tester',
+    'test analyst',
+    'qa analyst',
+    'quality analyst',
+    'test automation engineer',
+    'sdet',
+    'quality assurance specialist'
+  ],
+  'devops-engineer': [
+    'devops specialist',
+    'site reliability engineer',
+    'sre',
+    'platform engineer',
+    'infrastructure engineer',
+    'release engineer',
+    'deployment engineer',
+    'cloud engineer',
+    'ci/cd engineer',
+    'operations engineer'
+  ],
+  'security-engineer': [
+    'security specialist',
+    'cybersecurity engineer',
+    'information security engineer',
+    'application security engineer',
+    'security analyst',
+    'security consultant',
+    'penetration tester',
+    'ethical hacker',
+    'security architect',
+    'compliance specialist'
+  ],
+  'data-scientist': [
+    'data analyst',
+    'machine learning engineer',
+    'ai engineer',
+    'analytics specialist',
+    'data mining specialist',
+    'statistical analyst',
+    'research scientist',
+    'quantitative analyst',
+    'ml engineer',
+    'ai researcher'
+  ],
+  'ux-designer': [
+    'user experience designer',
+    'ui designer',
+    'interaction designer',
+    'user interface designer',
+    'product designer',
+    'experience designer',
+    'ui/ux designer',
+    'visual designer',
+    'web designer',
+    'interface architect'
+  ],
+  'product-manager': [
+    'product owner',
+    'program manager',
+    'project manager',
+    'technical product manager',
+    'product lead',
+    'feature owner',
+    'business analyst',
+    'product strategist',
+    'product marketing manager',
+    'requirements analyst'
+  ]
+};
+
+
+================================================================================
+FILE: src/domain/interfaces/index.ts
+================================================================================
+/**
+ * Re-export all interfaces from the domain layer.
+ */
+export * from './roleInterfaces.js';
+
+
+================================================================================
+FILE: src/domain/interfaces/roleInterfaces.ts
+================================================================================
+import { Role } from "../models/role.js";
+import { RoleResponse } from "../models/roleResponse.js";
+import { Scenario } from "../models/scenario.js";
+
+/**
+ * Interface for role repository operations.
+ */
+export interface IRoleRepository {
+  /**
+   * Gets a role by its ID.
+   * @param id The role ID
+   * @returns The role if found, null otherwise
+   */
+  getRoleById(id: string): Promise<Role | null>;
+
+  /**
+   * Gets a role by its name.
+   * @param name The role name
+   * @returns The role if found, null otherwise
+   */
+  getRoleByName(name: string): Promise<Role | null>;
+
+  /**
+   * Gets all available roles.
+   * @returns Array of all roles
+   */
+  getAllRoles(): Promise<Role[]>;
+
+  /**
+   * Saves a role response.
+   * @param response The role response to save
+   * @returns The saved role response
+   */
+  saveRoleResponse(response: RoleResponse): Promise<RoleResponse>;
+
+  /**
+   * Gets all scenarios.
+   * @returns Array of all scenarios
+   */
+  getAllScenarios(): Promise<Scenario[]>;
+
+  /**
+   * Gets a scenario by its ID.
+   * @param id The scenario ID
+   * @returns The scenario if found, null otherwise
+   */
+  getScenarioById(id: string): Promise<Scenario | null>;
+}
+
+/**
+ * Interface for role service operations.
+ */
+export interface IRoleService {
+  /**
+   * Gets a role by its name.
+   * @param name The role name
+   * @returns The role if found, null otherwise
+   */
+  getRoleByName(name: string): Promise<Role | null>;
+
+  /**
+   * Generates a prompt for a specific role and context.
+   * @param roleName The name of the role
+   * @param context The context or problem to address
+   * @returns The generated prompt
+   */
+  generateRolePrompt(roleName: string, context: string): Promise<string>;
+
+  /**
+   * Creates a role response.
+   * @param roleName The name of the role
+   * @param context The context or problem addressed
+   * @param analysis The detailed analysis
+   * @param recommendations Key recommendations
+   * @param nextSteps Suggested next steps
+   * @returns The created role response
+   */
+  createRoleResponse(
+    roleName: string,
+    context: string,
+    analysis: string,
+    recommendations: string[],
+    nextSteps: string[]
+  ): Promise<RoleResponse>;
+
+  /**
+   * Gets all available scenarios.
+   * @returns Array of all scenarios
+   */
+  getAllScenarios(): Promise<Scenario[]>;
+
+  /**
+   * Gets a scenario by its ID.
+   * @param id The scenario ID
+   * @returns The scenario if found, null otherwise
+   */
+  getScenarioById(id: string): Promise<Scenario | null>;
+}
+
+/**
+ * Interface for automatic role selection service operations.
+ */
+export interface IAutomaticRoleService {
+  /**
+   * Automatically selects the most appropriate role based on the context.
+   * @param context The context or problem description
+   * @returns The selected role, or null if no appropriate role is found
+   */
+  selectRoleForContext(context: string): Promise<Role | null>;
+
+  /**
+   * Automatically selects the most appropriate scenario based on the context.
+   * @param context The context or problem description
+   * @returns The selected scenario, or null if no appropriate scenario is found
+   */
+  selectScenarioForContext(context: string): Promise<Scenario | null>;
+
+  /**
+   * Automatically selects the most appropriate role for a given scenario.
+   * @param scenarioId The ID of the scenario
+   * @returns The selected role, or null if no appropriate role is found
+   */
+  selectRoleForScenario(scenarioId: string): Promise<Role | null>;
+}
+
+
+
+
+================================================================================
+FILE: src/domain/models/role.ts
+================================================================================
+/**
+ * Represents a professional role that an AI can adopt.
+ * Each role has specific expertise, responsibilities, and approaches to problem-solving.
+ */
+export class Role {
+  private constructor(
+    private readonly _id: string,
+    private readonly _name: string,
+    private readonly _description: string,
+    private readonly _responsibilities: string[],
+    private readonly _expertise: string[]
+  ) {}
+
+  /**
+   * Creates a new Role instance.
+   * @param id Unique identifier for the role
+   * @param name Display name of the role
+   * @param description Detailed description of the role
+   * @param responsibilities Key responsibilities of the role
+   * @param expertise Areas of expertise for the role
+   * @returns A new Role instance
+   */
+  public static create(
+    id: string,
+    name: string,
+    description: string,
+    responsibilities: string[],
+    expertise: string[]
+  ): Role {
+    if (!id || !name || !description) {
+      throw new Error("Role must have an id, name, and description");
+    }
+
+    if (!responsibilities || responsibilities.length === 0) {
+      throw new Error("Role must have at least one responsibility");
+    }
+
+    if (!expertise || expertise.length === 0) {
+      throw new Error("Role must have at least one area of expertise");
+    }
+
+    return new Role(id, name, description, responsibilities, expertise);
+  }
+
+  /**
+   * Generates a prompt for the AI to adopt this role.
+   * @param context The specific context or problem to address
+   * @returns A formatted prompt string
+   */
+  public generatePrompt(context: string): string {
+    return `As a senior ${this._name}, I will address the following: ${context}
+
+My responsibilities include:
+${this._responsibilities.map(r => `- ${r}`).join('\n')}
+
+My areas of expertise include:
+${this._expertise.map(e => `- ${e}`).join('\n')}
+
+${this._description}
+
+I will provide a comprehensive response with the following structure:
+1. A detailed analysis of the problem
+2. Specific, actionable recommendations
+3. Clear next steps to implement the solution
+4. ${this.getCodeExamplesPrompt()}
+
+I will now analyze the problem and provide expert guidance:
+`;
+  }
+
+  /**
+   * Gets the code examples prompt based on the role.
+   * @returns A string with the code examples prompt
+   */
+  private getCodeExamplesPrompt(): string {
+    // Customize the code examples prompt based on the role
+    switch (this._id.toLowerCase()) {
+      case 'senior-developer':
+        return 'Concrete code examples with detailed implementations (not just pseudocode)';
+      case 'architect':
+        return 'Architecture diagrams and component descriptions';
+      case 'qa-engineer':
+        return 'Test cases and testing strategies';
+      case 'devops-engineer':
+        return 'Infrastructure as code examples and CI/CD pipeline configurations';
+      case 'security-engineer':
+        return 'Security control implementations and best practices';
+      default:
+        return 'Relevant examples to illustrate the solution';
+    }
+  }
+
+  // Getters
+  public get id(): string {
+    return this._id;
+  }
+
+  public get name(): string {
+    return this._name;
+  }
+
+  public get description(): string {
+    return this._description;
+  }
+
+  public get responsibilities(): string[] {
+    return [...this._responsibilities];
+  }
+
+  public get expertise(): string[] {
+    return [...this._expertise];
+  }
+}
+
+
+================================================================================
+FILE: src/domain/models/roleResponse.ts
+================================================================================
+/**
+ * Represents a response generated by a role-based prompt.
+ * Contains the structured output from the role's analysis.
+ */
+export class RoleResponse {
+  private constructor(
+    private readonly _roleId: string,
+    private readonly _roleName: string,
+    private readonly _context: string,
+    private readonly _analysis: string,
+    private readonly _recommendations: string[],
+    private readonly _nextSteps: string[],
+    private readonly _codeExamples: string[] = []
+  ) {}
+
+  /**
+   * Creates a new RoleResponse instance.
+   * @param roleId ID of the role that generated the response
+   * @param roleName Name of the role that generated the response
+   * @param context The context or problem that was addressed
+   * @param analysis The detailed analysis provided by the role
+   * @param recommendations Key recommendations from the role
+   * @param nextSteps Suggested next steps to take
+   * @param codeExamples Code examples provided by the role
+   * @returns A new RoleResponse instance
+   */
+  public static create(
+    roleId: string,
+    roleName: string,
+    context: string,
+    analysis: string,
+    recommendations: string[],
+    nextSteps: string[] = [],
+    codeExamples: string[] = []
+  ): RoleResponse {
+    if (!roleId || !roleName || !context || !analysis) {
+      throw new Error("RoleResponse must have a roleId, roleName, context, and analysis");
+    }
+
+    if (!recommendations || recommendations.length === 0) {
+      throw new Error("RoleResponse must have at least one recommendation");
+    }
+
+    return new RoleResponse(
+      roleId,
+      roleName,
+      context,
+      analysis,
+      recommendations,
+      nextSteps,
+      codeExamples
+    );
+  }
+
+  /**
+   * Converts the response to a JSON-serializable object.
+   * @returns A plain object representation of the response
+   */
+  public toJSON(): Record<string, unknown> {
+    return {
+      roleId: this._roleId,
+      roleName: this._roleName,
+      context: this._context,
+      analysis: this._analysis,
+      recommendations: this._recommendations,
+      nextSteps: this._nextSteps,
+      codeExamples: this._codeExamples
+    };
+  }
+
+  // Getters
+  public get roleId(): string {
+    return this._roleId;
+  }
+
+  public get roleName(): string {
+    return this._roleName;
+  }
+
+  public get context(): string {
+    return this._context;
+  }
+
+  public get analysis(): string {
+    return this._analysis;
+  }
+
+  public get recommendations(): string[] {
+    return [...this._recommendations];
+  }
+
+  public get nextSteps(): string[] {
+    return [...this._nextSteps];
+  }
+
+  public get codeExamples(): string[] {
+    return [...this._codeExamples];
+  }
+}
+
+
+================================================================================
+FILE: src/domain/models/scenario.ts
+================================================================================
+/**
+ * Represents a scenario or problem that can be addressed by different roles.
+ * Scenarios provide context for role-based prompting.
+ */
+export class Scenario {
+  private constructor(
+    private readonly _id: string,
+    private readonly _title: string,
+    private readonly _description: string,
+    private readonly _category: string,
+    private readonly _complexity: 'low' | 'medium' | 'high',
+    private readonly _suggestedRoles: string[]
+  ) {}
+
+  /**
+   * Creates a new Scenario instance.
+   * @param id Unique identifier for the scenario
+   * @param title Short title of the scenario
+   * @param description Detailed description of the scenario
+   * @param category Category of the scenario (e.g., "architecture", "development", "testing")
+   * @param complexity Complexity level of the scenario
+   * @param suggestedRoles Roles that are well-suited to address this scenario
+   * @returns A new Scenario instance
+   */
+  public static create(
+    id: string,
+    title: string,
+    description: string,
+    category: string,
+    complexity: 'low' | 'medium' | 'high',
+    suggestedRoles: string[]
+  ): Scenario {
+    if (!id || !title || !description || !category) {
+      throw new Error("Scenario must have an id, title, description, and category");
+    }
+
+    if (!suggestedRoles || suggestedRoles.length === 0) {
+      throw new Error("Scenario must have at least one suggested role");
+    }
+
+    return new Scenario(id, title, description, category, complexity, suggestedRoles);
+  }
+
+  /**
+   * Formats the scenario for presentation.
+   * @returns A formatted string representation of the scenario
+   */
+  public format(): string {
+    return `# ${this._title} (${this._complexity} complexity)
+
+## Description
+${this._description}
+
+## Category
+${this._category}
+
+## Suggested Roles
+${this._suggestedRoles.map(role => `- ${role}`).join('\n')}
+`;
+  }
+
+  // Getters
+  public get id(): string {
+    return this._id;
+  }
+
+  public get title(): string {
+    return this._title;
+  }
+
+  public get description(): string {
+    return this._description;
+  }
+
+  public get category(): string {
+    return this._category;
+  }
+
+  public get complexity(): 'low' | 'medium' | 'high' {
+    return this._complexity;
+  }
+
+  public get suggestedRoles(): string[] {
+    return [...this._suggestedRoles];
+  }
+}
+
+
+================================================================================
+FILE: src/domain/services/automaticRoleService.ts
+================================================================================
+import { IRoleRepository } from "../interfaces/roleInterfaces.js";
+import { Role } from "../models/role.js";
+import { Scenario } from "../models/scenario.js";
+import { config } from "../../config/index.js";
+import { Logger } from "../../utils/logger.js";
+
+/**
+ * Interface for the automatic role selection service.
+ */
+export interface IAutomaticRoleService {
+  /**
+   * Automatically selects the most appropriate role based on the context.
+   * @param context The context or problem description
+   * @returns The selected role, or null if no appropriate role is found
+   */
+  selectRoleForContext(context: string): Promise<Role | null>;
+
+  /**
+   * Automatically selects the most appropriate scenario based on the context.
+   * @param context The context or problem description
+   * @returns The selected scenario, or null if no appropriate scenario is found
+   */
+  selectScenarioForContext(context: string): Promise<Scenario | null>;
+
+  /**
+   * Automatically selects the most appropriate role for a given scenario.
+   * @param scenarioId The ID of the scenario
+   * @returns The selected role, or null if no appropriate role is found
+   */
+  selectRoleForScenario(scenarioId: string): Promise<Role | null>;
+}
+
+/**
+ * Implementation of the automatic role selection service.
+ * This service analyzes context and automatically selects appropriate roles and scenarios.
+ */
+export class AutomaticRoleServiceImpl implements IAutomaticRoleService {
+  /**
+   * Creates a new AutomaticRoleServiceImpl instance.
+   * @param repository The role repository to use
+   */
+  constructor(private readonly repository: IRoleRepository) {}
+
+  /**
+   * Gets the default role.
+   * @returns The default role if available, null otherwise
+   */
+  private async getDefaultRole(): Promise<Role | null> {
+    const roles = await this.repository.getAllRoles();
+    if (!roles || roles.length === 0) {
+      return null;
+    }
+
+    // Try to get the default role from configuration
+    const defaultRoleName = config.roles.defaultRole;
+    const defaultRole = await this.repository.getRoleByName(defaultRoleName) ||
+                        await this.repository.getRoleById(defaultRoleName) ||
+                        roles[0];
+
+    return defaultRole;
+  }
+
+  // Note: This utility method is kept for future refactoring
+  // but is not currently used. It will be used to refactor the role and scenario
+  // selection methods to reduce code duplication.
+  /*
+  private scoreItemsByKeywords<T>(
+    items: T[],
+    getKeywords: (item: T) => string[],
+    context: string
+  ): { item: T; score: number }[] {
+    const contextLower = context.toLowerCase();
+
+    // Score each item based on keyword matches
+    const scores = items.map(item => {
+      const keywords = getKeywords(item);
+
+      // Count how many keywords match
+      const score = keywords.reduce((count, keyword) => {
+        return count + (contextLower.includes(keyword) ? 1 : 0);
+      }, 0);
+
+      return { item, score };
+    });
+
+    // Sort by score (descending)
+    return scores.sort((a, b) => b.score - a.score);
+  }
+  */
+
+  /**
+   * Automatically selects the most appropriate role based on the context.
+   * @param context The context or problem description
+   * @returns The selected role, or a default role if no appropriate role is found
+   */
+  async selectRoleForContext(context: string): Promise<Role | null> {
+    Logger.debug(`Selecting role for context: "${context.substring(0, 50)}..."`);
+
+    // Get all available roles
+    const roles = await this.repository.getAllRoles();
+
+    // If no roles are available, return null
+    if (!roles || roles.length === 0) {
+      Logger.debug("No roles available");
+      return null;
+    }
+
+    // Create a map of role IDs to roles for quick lookup
+    const roleMap = new Map<string, Role>();
+    for (const role of roles) {
+      roleMap.set(role.id.toLowerCase(), role);
+    }
+
+    // Score each role based on keyword matches
+    const roleScores = Object.entries(config.roleKeywords).map(([roleId, keywords]) => {
+      const role = roleMap.get(roleId.toLowerCase());
+
+      // Skip if role doesn't exist in our system
+      if (!role) {
+        return { role: null, score: -1 };
+      }
+
+      // Count how many keywords match
+      const contextLower = context.toLowerCase();
+      const score = keywords.reduce((count, keyword) => {
+        return count + (contextLower.includes(keyword) ? 1 : 0);
+      }, 0);
+
+      // Add a higher score if the role name is explicitly mentioned
+      let nameScore = 0;
+      if (contextLower.includes(role.name.toLowerCase())) {
+        nameScore = 5; // Give a significant boost for explicit mention
+      }
+
+      return { role, score: score + nameScore };
+    }).filter(item => item.role !== null);
+
+    // Sort roles by score (descending)
+    roleScores.sort((a, b) => b.score - a.score);
+
+    // Return the highest-scoring role
+    if (roleScores.length > 0 && roleScores[0].score > 0) {
+      Logger.debug(`Selected role: ${roleScores[0].role!.name} with score ${roleScores[0].score}`);
+      return roleScores[0].role;
+    }
+
+    // If no role matched with a score > 0, return a default role
+    const defaultRole = await this.getDefaultRole();
+    if (defaultRole) {
+      Logger.debug(`Falling back to default role: ${defaultRole.name}`);
+    } else {
+      Logger.debug("No default role available");
+    }
+
+    return defaultRole;
+  }
+
+  /**
+   * Automatically selects the most appropriate scenario based on the context.
+   * @param context The context or problem description
+   * @returns The selected scenario, or null if no appropriate scenario is found
+   */
+  async selectScenarioForContext(context: string): Promise<Scenario | null> {
+    Logger.debug(`Selecting scenario for context: "${context.substring(0, 50)}..."`);
+
+    // Get all available scenarios
+    const scenarios = await this.repository.getAllScenarios();
+
+    // If no scenarios are available, return null
+    if (!scenarios || scenarios.length === 0) {
+      Logger.debug("No scenarios available");
+      return null;
+    }
+
+    // Simple keyword-based matching for now
+    const contextLower = context.toLowerCase();
+
+    // Score each scenario based on title and description matches
+    const scenarioScores = scenarios.map(scenario => {
+      const titleLower = scenario.title.toLowerCase();
+      const descriptionLower = scenario.description.toLowerCase();
+
+      // Check if context contains words from title or description
+      const titleWords = titleLower.split(/\s+/).filter(word => word.length > 3);
+      const descriptionWords = descriptionLower.split(/\s+/).filter(word => word.length > 3);
+
+      // Count matches in title (weighted higher) and description
+      const titleScore = titleWords.reduce((count, word) => {
+        return count + (contextLower.includes(word) ? 2 : 0);
+      }, 0);
+
+      const descriptionScore = descriptionWords.reduce((count, word) => {
+        return count + (contextLower.includes(word) ? 1 : 0);
+      }, 0);
+
+      return { scenario, score: titleScore + descriptionScore };
+    });
+
+    // Sort scenarios by score (descending)
+    scenarioScores.sort((a, b) => b.score - a.score);
+
+    // Return the highest-scoring scenario, or null if no scenario scored above 0
+    if (scenarioScores.length > 0 && scenarioScores[0].score > 0) {
+      Logger.debug(`Selected scenario: ${scenarioScores[0].scenario.title} with score ${scenarioScores[0].score}`);
+      return scenarioScores[0].scenario;
+    }
+
+    Logger.debug("No matching scenario found");
+    return null;
+  }
+
+  /**
+   * Automatically selects the most appropriate role for a given scenario.
+   * @param scenarioId The ID of the scenario
+   * @returns The selected role, or a default role if no appropriate role is found
+   */
+  async selectRoleForScenario(scenarioId: string): Promise<Role | null> {
+    Logger.debug(`Selecting role for scenario: ${scenarioId}`);
+
+    // Get the scenario
+    const scenario = await this.repository.getScenarioById(scenarioId);
+
+    // If the scenario doesn't exist, return a default role
+    if (!scenario) {
+      Logger.debug(`Scenario not found: ${scenarioId}`);
+      return this.getDefaultRole();
+    }
+
+    // Get the suggested roles for the scenario
+    const suggestedRoles = scenario.suggestedRoles;
+
+    // If there are no suggested roles, return a default role
+    if (!suggestedRoles || suggestedRoles.length === 0) {
+      Logger.debug(`No suggested roles for scenario: ${scenarioId}`);
+      return this.getDefaultRole();
+    }
+
+    // Try to get the first suggested role
+    for (const roleName of suggestedRoles) {
+      const role = await this.repository.getRoleByName(roleName);
+      if (role) {
+        Logger.debug(`Selected role: ${role.name} from scenario suggestions`);
+        return role;
+      }
+    }
+
+    // If none of the suggested roles were found, return a default role
+    Logger.debug(`No matching role found for scenario suggestions: ${suggestedRoles.join(', ')}`);
+    return this.getDefaultRole();
+  }
+}
+
+
+================================================================================
+FILE: src/domain/services/roleLookupService.ts
+================================================================================
+import { Role } from "../models/role.js";
+import { Logger } from "../../utils/logger.js";
+import { config } from "../../config/index.js";
+
+/**
+ * Service for looking up roles by name, ID, or keywords.
+ */
+export class RoleLookupService {
+  /**
+   * Creates a new RoleLookupService instance.
+   * @param roles Map of role IDs to roles
+   * @param roleAliases Map of role IDs to aliases
+   */
+  constructor(
+    private readonly roles: Map<string, Role>,
+    private readonly roleAliases: Record<string, string[]>
+  ) {}
+
+  /**
+   * Finds a role by name, ID, or keywords.
+   * @param name The role name, ID, or keyword
+   * @returns The role if found, null otherwise
+   */
+  findRole(name: string): Role | null {
+    Logger.debug(`Finding role with name: "${name}"`);
+
+    if (!name) {
+      Logger.debug(`Name is empty or undefined`);
+      return null;
+    }
+
+    const normalizedName = name.toLowerCase().trim();
+    Logger.debug(`Normalized name: "${normalizedName}"`);
+
+    // Try all lookup strategies in order
+    return this.findByDirectMatch(normalizedName) ||
+           this.findByAlias(normalizedName) ||
+           this.findByFormatNormalization(normalizedName) ||
+           this.findByPartialMatch(normalizedName) ||
+           this.findByFuzzyMatch(normalizedName) ||
+           this.findByKeywords(normalizedName) ||
+           this.getDefaultRole();
+  }
+
+  /**
+   * Finds a role by direct ID or name match.
+   * @param normalizedName The normalized name to look up
+   * @returns The role if found, null otherwise
+   */
+  private findByDirectMatch(normalizedName: string): Role | null {
+    // 1. Direct ID lookup
+    const roleById = this.roles.get(normalizedName);
+    if (roleById) {
+      Logger.debug(`Found role by ID: "${roleById.id}"`);
+      return roleById;
+    }
+
+    // 2. Exact name match
+    for (const role of this.roles.values()) {
+      if (role.name.toLowerCase() === normalizedName) {
+        Logger.debug(`Found role by name: "${role.name}"`);
+        return role;
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Finds a role by alias match.
+   * @param normalizedName The normalized name to look up
+   * @returns The role if found, null otherwise
+   */
+  private findByAlias(normalizedName: string): Role | null {
+    // Check against aliases
+    for (const [roleId, aliases] of Object.entries(this.roleAliases)) {
+      if (aliases.includes(normalizedName)) {
+        const role = this.roles.get(roleId);
+        if (role) {
+          Logger.debug(`Found role by alias match: "${role.id}" for alias "${normalizedName}"`);
+          return role;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Finds a role by format normalization (hyphens vs spaces).
+   * @param normalizedName The normalized name to look up
+   * @returns The role if found, null otherwise
+   */
+  private findByFormatNormalization(normalizedName: string): Role | null {
+    const normalizedNameNoHyphens = normalizedName.replace(/-/g, ' ');
+
+    for (const role of this.roles.values()) {
+      const roleIdNoHyphens = role.id.toLowerCase().replace(/-/g, ' ');
+      if (roleIdNoHyphens === normalizedNameNoHyphens) {
+        Logger.debug(`Found role by ID without hyphens: "${role.id}"`);
+        return role;
+      }
+
+      const roleNameNoHyphens = role.name.toLowerCase().replace(/-/g, ' ');
+      if (roleNameNoHyphens === normalizedNameNoHyphens) {
+        Logger.debug(`Found role by name without hyphens: "${role.name}"`);
+        return role;
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Finds a role by partial alias match.
+   * @param normalizedName The normalized name to look up
+   * @returns The role if found, null otherwise
+   */
+  private findByPartialMatch(normalizedName: string): Role | null {
+    // Check if the normalized name is a partial match for any alias
+    for (const [roleId, aliases] of Object.entries(this.roleAliases)) {
+      for (const alias of aliases) {
+        if (alias.includes(normalizedName) || normalizedName.includes(alias)) {
+          const role = this.roles.get(roleId);
+          if (role) {
+            Logger.debug(`Found role by partial alias match: "${role.id}" for partial alias "${normalizedName}"`);
+            return role;
+          }
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Finds a role by fuzzy substring matching.
+   * @param normalizedName The normalized name to look up
+   * @returns The role if found, null otherwise
+   */
+  private findByFuzzyMatch(normalizedName: string): Role | null {
+    for (const role of this.roles.values()) {
+      // Check if the normalized name is a substring of the role ID or vice versa
+      if (role.id.toLowerCase().includes(normalizedName) || normalizedName.includes(role.id.toLowerCase())) {
+        Logger.debug(`Found role by fuzzy ID match: "${role.id}"`);
+        return role;
+      }
+
+      // Check if the normalized name is a substring of the role name or vice versa
+      if (role.name.toLowerCase().includes(normalizedName) || normalizedName.includes(role.name.toLowerCase())) {
+        Logger.debug(`Found role by fuzzy name match: "${role.name}"`);
+        return role;
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Finds a role by keyword matching.
+   * @param normalizedName The normalized name to look up
+   * @returns The role if found, null otherwise
+   */
+  private findByKeywords(normalizedName: string): Role | null {
+    // Check for developer keywords
+    const developerKeywords = config.roleKeywords['senior-developer'];
+    if (developerKeywords.some(keyword => normalizedName.includes(keyword))) {
+      const seniorDeveloper = this.roles.get('senior-developer');
+      if (seniorDeveloper) {
+        Logger.debug(`Falling back to senior-developer role based on keywords`);
+        return seniorDeveloper;
+      }
+    }
+
+    // Check for architect keywords
+    const architectKeywords = config.roleKeywords['architect'];
+    if (architectKeywords.some(keyword => normalizedName.includes(keyword))) {
+      const architect = this.roles.get('architect');
+      if (architect) {
+        Logger.debug(`Falling back to architect role based on keywords`);
+        return architect;
+      }
+    }
+
+    // Check for QA keywords
+    const qaKeywords = config.roleKeywords['qa-engineer'];
+    if (qaKeywords.some(keyword => normalizedName.includes(keyword))) {
+      const qaEngineer = this.roles.get('qa-engineer');
+      if (qaEngineer) {
+        Logger.debug(`Falling back to qa-engineer role based on keywords`);
+        return qaEngineer;
+      }
+    }
+
+    // Check for DevOps keywords
+    const devopsKeywords = config.roleKeywords['devops-engineer'];
+    if (devopsKeywords.some(keyword => normalizedName.includes(keyword))) {
+      const devopsEngineer = this.roles.get('devops-engineer');
+      if (devopsEngineer) {
+        Logger.debug(`Falling back to devops-engineer role based on keywords`);
+        return devopsEngineer;
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Gets the default role.
+   * @returns The default role if available, null otherwise
+   */
+  private getDefaultRole(): Role | null {
+    // Last resort: return the first available role (preferably architect)
+    const architect = this.roles.get('architect');
+    if (architect) {
+      Logger.debug(`Falling back to architect role as last resort`);
+      return architect;
+    }
+
+    if (this.roles.size > 0) {
+      const firstRole = Array.from(this.roles.values())[0];
+      Logger.debug(`Falling back to first available role: "${firstRole.id}"`);
+      return firstRole;
+    }
+
+    return null;
+  }
+}
+
+
+================================================================================
+FILE: src/domain/services/roleService.ts
+================================================================================
+import { IRoleRepository, IRoleService } from "../interfaces/roleInterfaces.js";
+import { Role } from "../models/role.js";
+import { RoleResponse } from "../models/roleResponse.js";
+import { Scenario } from "../models/scenario.js";
+
+/**
+ * Implementation of the role service.
+ * Provides functionality for working with roles, scenarios, and generating role-based prompts.
+ */
+export class RoleServiceImpl implements IRoleService {
+  /**
+   * Creates a new RoleServiceImpl instance.
+   * @param repository The role repository to use
+   */
+  constructor(private readonly repository: IRoleRepository) {}
+
+  /**
+   * Gets a role by its name.
+   * @param name The role name
+   * @returns The role if found, null otherwise
+   */
+  async getRoleByName(name: string): Promise<Role | null> {
+    return this.repository.getRoleByName(name);
+  }
+
+  /**
+   * Generates a prompt for a specific role and context.
+   * @param roleName The name of the role
+   * @param context The context or problem to address
+   * @returns The generated prompt
+   * @throws Error if the role is not found
+   */
+  async generateRolePrompt(roleName: string, context: string): Promise<string> {
+    const role = await this.repository.getRoleByName(roleName);
+    if (!role) {
+      throw new Error(`Role not found: ${roleName}`);
+    }
+
+    return role.generatePrompt(context);
+  }
+
+  /**
+   * Creates a role response.
+   * @param roleName The name of the role
+   * @param context The context or problem addressed
+   * @param analysis The detailed analysis
+   * @param recommendations Key recommendations
+   * @param nextSteps Suggested next steps
+   * @returns The created role response
+   * @throws Error if the role is not found
+   */
+  async createRoleResponse(
+    roleName: string,
+    context: string,
+    analysis: string,
+    recommendations: string[],
+    nextSteps: string[]
+  ): Promise<RoleResponse> {
+    const role = await this.repository.getRoleByName(roleName);
+    if (!role) {
+      throw new Error(`Role not found: ${roleName}`);
+    }
+
+    const response = RoleResponse.create(
+      role.id,
+      role.name,
+      context,
+      analysis,
+      recommendations,
+      nextSteps
+    );
+
+    return this.repository.saveRoleResponse(response);
+  }
+
+  /**
+   * Gets all available scenarios.
+   * @returns Array of all scenarios
+   */
+  async getAllScenarios(): Promise<Scenario[]> {
+    return this.repository.getAllScenarios();
+  }
+
+  /**
+   * Gets a scenario by its ID.
+   * @param id The scenario ID
+   * @returns The scenario if found, null otherwise
+   */
+  async getScenarioById(id: string): Promise<Scenario | null> {
+    return this.repository.getScenarioById(id);
+  }
+}
+
+
+================================================================================
+FILE: src/index.ts
+================================================================================
+#!/usr/bin/env node
+
+import { main } from './infrastructure/server/index.js';
+
+// Start the server with error handling
+try {
+  console.error("Starting Fidora Server from index.ts with hot reloading enabled!");
+  console.log("Hot reloading test: This line was added.");
+  main();
+} catch (error) {
+  console.error("Fatal error in index.ts:", error);
+  process.exit(1);
+}
+
+
+================================================================================
+FILE: src/infrastructure/repositories/roleRepository.ts
+================================================================================
+import { IRoleRepository } from "../../domain/interfaces/roleInterfaces.js";
+import { Role } from "../../domain/models/role.js";
+import { RoleResponse } from "../../domain/models/roleResponse.js";
+import { Scenario } from "../../domain/models/scenario.js";
+import { RoleLookupService } from "../../domain/services/roleLookupService.js";
+import { Logger } from "../../utils/logger.js";
+import { roleData, scenarioData, roleAliases } from "../../config/roleData.js";
+
+/**
+ * In-memory implementation of the role repository.
+ */
+export class InMemoryRoleRepository implements IRoleRepository {
+  private roles: Map<string, Role> = new Map();
+  private scenarios: Map<string, Scenario> = new Map();
+  private responses: RoleResponse[] = [];
+  private roleLookupService: RoleLookupService;
+
+  /**
+   * Creates a new InMemoryRoleRepository instance with predefined roles and scenarios.
+   */
+  constructor() {
+    // Initialize with predefined roles and scenarios
+    this.initializeRoles();
+    this.initializeScenarios();
+
+    // Initialize the role lookup service
+    this.roleLookupService = new RoleLookupService(this.roles, roleAliases);
+  }
+
+  /**
+   * Gets a role by its ID.
+   * @param id The role ID
+   * @returns The role if found, null otherwise
+   */
+  async getRoleById(id: string): Promise<Role | null> {
+    return this.roles.get(id) || null;
+  }
+
+  /**
+   * Gets a role by its name or ID.
+   * @param name The role name or ID
+   * @returns The role if found, null otherwise
+   */
+  async getRoleByName(name: string): Promise<Role | null> {
+    Logger.debug(`getRoleByName called with name: "${name}"`);
+    return this.roleLookupService.findRole(name);
+  }
+
+  /**
+   * Gets all available roles.
+   * @returns Array of all roles
+   */
+  async getAllRoles(): Promise<Role[]> {
+    return Array.from(this.roles.values());
+  }
+
+  /**
+   * Saves a role response.
+   * @param response The role response to save
+   * @returns The saved role response
+   */
+  async saveRoleResponse(response: RoleResponse): Promise<RoleResponse> {
+    this.responses.push(response);
+    return response;
+  }
+
+  /**
+   * Gets all scenarios.
+   * @returns Array of all scenarios
+   */
+  async getAllScenarios(): Promise<Scenario[]> {
+    return Array.from(this.scenarios.values());
+  }
+
+  /**
+   * Gets a scenario by its ID.
+   * @param id The scenario ID
+   * @returns The scenario if found, null otherwise
+   */
+  async getScenarioById(id: string): Promise<Scenario | null> {
+    return this.scenarios.get(id) || null;
+  }
+
+  /**
+   * Initializes the repository with predefined roles.
+   */
+  private initializeRoles(): void {
+    // Create roles from configuration
+    for (const roleConfig of roleData) {
+      const role = Role.create(
+        roleConfig.id,
+        roleConfig.name,
+        roleConfig.description,
+        roleConfig.responsibilities,
+        roleConfig.expertise
+      );
+      this.roles.set(role.id, role);
+      Logger.debug(`Initialized role: ${role.id} (${role.name})`);
+    }
+  }
+
+  /**
+   * Initializes the repository with predefined scenarios.
+   */
+  private initializeScenarios(): void {
+    // Create scenarios from configuration
+    for (const scenarioConfig of scenarioData) {
+      const scenario = Scenario.create(
+        scenarioConfig.id,
+        scenarioConfig.title,
+        scenarioConfig.description,
+        scenarioConfig.category,
+        scenarioConfig.complexity,
+        scenarioConfig.suggestedRoles
+      );
+      this.scenarios.set(scenario.id, scenario);
+      Logger.debug(`Initialized scenario: ${scenario.id} (${scenario.title})`);
+    }
+  }
+}
+
+
+================================================================================
+FILE: src/infrastructure/server/index.ts
+================================================================================
+#!/usr/bin/env node
+
+import { runServer } from './server.js';
+
+/**
+ * Entry point for the Fidora server.
+ * Starts the server and handles any fatal errors.
+ */
+export function main(): void {
+  console.error("Fidora Server: Starting main function in server/index.ts");
+  try {
+    runServer().catch((error) => {
+      console.error("Fatal error running server:", error);
+      console.error("Error details:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
+      process.exit(1);
+    });
+  } catch (error) {
+    console.error("Unexpected error in main function:", error);
+    console.error("Error details:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
+    process.exit(1);
+  }
+}
+
+// If this file is run directly, start the server
+// In ES modules, we can check if this is the main module by comparing import.meta.url
+// against the process.argv[1] converted to URL format
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main();
+}
+
+
+================================================================================
+FILE: src/infrastructure/server/server.ts
+================================================================================
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { z } from "zod";
+
+import { ProcessRolePromptUseCase } from "../../application/useCases/processRolePrompt.js";
+import { RoleServiceImpl } from "../../domain/services/roleService.js";
+import { InMemoryRoleRepository } from "../repositories/roleRepository.js";
+import { ROLE_PROMPT_TOOL } from "../tools/rolePromptTool.js";
+import { validateRolePromptData } from "../validation/rolePromptSchemas.js";
+import { RolePromptFormatter } from "../../presentation/formatters/rolePromptFormatter.js";
+
+/**
+ * Creates and configures the MCP server.
+ * @returns The configured server.
+ */
+export function createServer(): McpServer {
+  console.error("Fidora Server: Creating server instance");
+  try {
+    // Create the server with metadata
+    const server = new McpServer({
+      name: "fidora-server",
+      version: "1.0.0",
+    });
+
+    // Set up the domain and application layers
+    const roleRepository = new InMemoryRoleRepository();
+    const roleService = new RoleServiceImpl(roleRepository);
+
+    // Set up the use cases
+    const processRolePromptUseCase = new ProcessRolePromptUseCase(roleService);
+
+    console.error("[DEBUG] Adding rolePrompt tool");
+
+    // Add the rolePrompt tool
+    server.tool(
+      ROLE_PROMPT_TOOL.name,
+      {
+        role: z.string().describe("The professional role to adopt"),
+        context: z.string().describe("The context or problem description for the role to address"),
+        scenarioId: z.string().optional().describe("Optional ID of a predefined scenario to use")
+      },
+      async (args) => {
+        try {
+          // Validate the input
+          const validatedInput = validateRolePromptData(args);
+
+          // Process the role prompt using the use case
+          const result = await processRolePromptUseCase.execute(validatedInput);
+
+          if (result.error) {
+            // Handle error case
+            console.error(`Error processing role prompt: ${result.error.error}`);
+            return {
+              content: [{
+                type: "text",
+                text: RolePromptFormatter.formatOutputToJson(result.error)
+              }],
+              isError: true
+            };
+          } else if (result.data) {
+            // Handle success case
+            // Format the role prompt for console display
+            const role = await roleService.getRoleByName(validatedInput.role);
+            if (role) {
+              console.error(RolePromptFormatter.formatForConsole(role, validatedInput.context));
+            }
+
+            // Return the result as JSON
+            return {
+              content: [{
+                type: "text",
+                text: RolePromptFormatter.formatOutputToJson(result.data)
+              }]
+            };
+          }
+
+          // Fallback for unexpected cases
+          return {
+            content: [{
+              type: "text",
+              text: "Unknown error occurred"
+            }],
+            isError: true
+          };
+        } catch (error) {
+          // Handle unexpected errors
+          console.error(`Unexpected error: ${error instanceof Error ? error.message : String(error)}`);
+          return {
+            content: [{
+              type: "text",
+              text: RolePromptFormatter.formatOutputToJson({
+                error: error instanceof Error ? error.message : String(error),
+                status: 'failed'
+              })
+            }],
+            isError: true
+          };
+        }
+      }
+    );
+
+
+
+    // Debug: Log the registered tool
+    console.error("[DEBUG] Final registered tool in createServer:");
+    console.error(`[DEBUG]   - ${ROLE_PROMPT_TOOL.name}`);
+
+    return server;
+  } catch (error) {
+    console.error("Error creating server:", error);
+    console.error("Error details:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
+    throw error;
+  }
+}
+
+/**
+ * Initializes and runs the MCP server using standard I/O transport.
+ */
+export async function runServer(): Promise<void> {
+  console.error("Fidora Server: Starting runServer function");
+
+  try {
+    console.error("Fidora Server: Creating server instance");
+    const server = createServer();
+
+    // Debug: Log the registered tool
+    console.error("[DEBUG] Registered tool:");
+    console.error(`[DEBUG]   - ${ROLE_PROMPT_TOOL.name}`);
+
+    console.error("Fidora Server: Creating transport");
+    const transport = new StdioServerTransport();
+
+    try {
+      console.error("Fidora Server: Connecting to transport");
+
+      // Debug: Log that we're about to connect
+      console.error("[DEBUG] Tool before connecting:");
+      console.error(`[DEBUG]   - ${ROLE_PROMPT_TOOL.name}`);
+
+      await server.connect(transport);
+      console.error("Fidora Server running on stdio");
+
+      // Debug: Log that we've connected
+      console.error("[DEBUG] Tool after connecting:");
+      console.error(`[DEBUG]   - ${ROLE_PROMPT_TOOL.name}`);
+
+      // Update the available tools message
+      const toolNames = `${ROLE_PROMPT_TOOL.name}`;
+      console.error(`Available tool: ${toolNames}`);
+
+      // Keep the process alive indefinitely
+      // The McpServer will handle the connection lifecycle
+      await new Promise<void>(() => {
+        // This promise intentionally never resolves to keep the server running
+      });
+    } catch (error) {
+      console.error("Error during server connection or operation:", error);
+      console.error("Error details:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
+      throw error;
+    } finally {
+      console.error("Fidora Server: runServer function potentially finishing");
+    }
+  } catch (error) {
+    console.error("Fatal error in runServer:", error);
+    console.error("Error details:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
+    throw error;
+  }
+}
+
+
+================================================================================
+FILE: src/infrastructure/tools/rolePromptTool.ts
+================================================================================
+import { Tool } from "@modelcontextprotocol/sdk/types.js";
+
+/**
+ * Definition of the RolePrompt tool for the MCP server.
+ * This tool allows clients to interact with the role-based prompting system.
+ */
+export const ROLE_PROMPT_TOOL: Tool = {
+  name: "rolePrompt",
+  description: `A tool that enables AI models to adopt specific professional roles for enhanced problem-solving.
+This tool allows you to specify a professional role and a context or problem for the role to address.
+
+When to use this tool:
+- When you need expert guidance from a specific professional perspective
+- When you want to approach a problem with a specific role's expertise
+- When you need to systematically divide tasks among different roles
+
+Available roles (use EXACTLY these role names):
+- architect: For system design, architecture decisions, and technical planning
+- senior-developer: For implementation guidance, coding best practices, and technical solutions
+- qa-engineer: For testing strategies, quality assurance, and bug prevention
+- devops-engineer: For deployment, CI/CD, and infrastructure concerns
+- security-engineer: For security assessments, vulnerability management, and security best practices
+- data-scientist: For data analysis, machine learning, and statistical insights
+- ux-designer: For user experience design, interface improvements, and usability considerations
+- product-manager: For product strategy, feature prioritization, and roadmap planning
+
+IMPORTANT: You must use the exact role names listed above. The system supports fuzzy matching and aliases,
+but using the exact role names is recommended for best results.
+
+Parameters explained:
+- role: The professional role to adopt (one of the roles listed above)
+- context: The specific problem or situation that needs to be addressed
+- scenarioId (optional): ID of a predefined scenario to use for additional context
+
+You should:
+1. Choose the most appropriate role for your current need
+2. Provide a clear and detailed context describing the problem or situation
+3. Use the response to guide your approach to the problem`,
+  inputSchema: {
+    type: "object",
+    properties: {
+      role: {
+        type: "string",
+        description: "The professional role to adopt"
+      },
+      context: {
+        type: "string",
+        description: "The context or problem description for the role to address"
+      },
+      scenarioId: {
+        type: "string",
+        description: "Optional ID of a predefined scenario to use"
+      }
+    },
+    required: ["role", "context"]
+  }
+};
+
+
+================================================================================
+FILE: src/infrastructure/validation/rolePromptSchemas.ts
+================================================================================
+import { z } from "zod";
+import { RolePromptRequestDto } from "../../application/dtos/rolePromptDto.js";
+import { validateWithSchema } from "../../utils/validation.js";
+import { ValidationError } from "../../utils/errors.js";
+
+/**
+ * Zod schema for validating role prompt request data.
+ */
+export const rolePromptSchema = z.object({
+  role: z.string().min(1, "Role is required"),
+  context: z.string().min(1, "Context is required"),
+  scenarioId: z.string().optional()
+});
+
+/**
+ * Validates the input data for a role prompt request.
+ * @param data The data to validate
+ * @returns The validated data
+ * @throws ValidationError if the data is invalid
+ */
+export function validateRolePromptData(data: unknown): RolePromptRequestDto {
+  try {
+    return validateWithSchema(rolePromptSchema, data, "Invalid role prompt data");
+  } catch (error) {
+    throw new ValidationError(error instanceof Error ? error.message : String(error));
+  }
+}
+
+
+================================================================================
+FILE: src/presentation/formatters/baseFormatter.ts
+================================================================================
+import { formatAsJson } from "../../utils/formatting.js";
+
+/**
+ * Base formatter class with common formatting methods.
+ */
+export abstract class BaseFormatter {
+  /**
+   * Formats a response as JSON.
+   * @param response The response to format
+   * @returns A JSON string representation of the response
+   */
+  public static formatOutputToJson(response: any): string {
+    return formatAsJson(response);
+  }
+}
+
+
+================================================================================
+FILE: src/presentation/formatters/rolePromptFormatter.ts
+================================================================================
+import { Role } from "../../domain/models/role.js";
+import { formatAsList, truncateString } from "../../utils/formatting.js";
+import { BaseFormatter } from "./baseFormatter.js";
+
+/**
+ * Formatter for role prompt responses.
+ */
+export class RolePromptFormatter extends BaseFormatter {
+  /**
+   * Formats a role prompt response for console display.
+   * @param role The role that generated the response
+   * @param context The context that was addressed
+   * @returns A formatted string for console display
+   */
+  public static formatForConsole(role: Role, context: string): string {
+    return `
+=== Role Prompt Request ===
+Role: ${role.name}
+Context: ${truncateString(context, 200)}
+
+=== Role Information ===
+Description: ${role.description}
+Responsibilities:
+${formatAsList(role.responsibilities, '  - ')}
+Expertise:
+${formatAsList(role.expertise, '  - ')}
+`;
+  }
+}
+
+
+================================================================================
+FILE: src/utils/errors.ts
+================================================================================
+/**
+ * Base application error class.
+ */
+export class AppError extends Error {
+  /**
+   * Creates a new AppError instance.
+   * @param message The error message
+   * @param code The error code
+   * @param status The HTTP status code
+   */
+  constructor(
+    public readonly message: string,
+    public readonly code: string = 'INTERNAL_ERROR',
+    public readonly status: number = 500
+  ) {
+    super(message);
+    this.name = 'AppError';
+    // Ensure proper prototype chain for instanceof checks
+    Object.setPrototypeOf(this, AppError.prototype);
+  }
+
+  /**
+   * Converts the error to a JSON-serializable object.
+   * @returns A plain object representation of the error
+   */
+  toJSON(): Record<string, unknown> {
+    return {
+      error: this.message,
+      code: this.code,
+      status: 'failed'
+    };
+  }
+}
+
+/**
+ * Error thrown when validation fails.
+ */
+export class ValidationError extends AppError {
+  /**
+   * Creates a new ValidationError instance.
+   * @param message The error message
+   */
+  constructor(message: string) {
+    super(message, 'VALIDATION_ERROR', 400);
+    this.name = 'ValidationError';
+    // Ensure proper prototype chain for instanceof checks
+    Object.setPrototypeOf(this, ValidationError.prototype);
+  }
+}
+
+/**
+ * Error thrown when a resource is not found.
+ */
+export class NotFoundError extends AppError {
+  /**
+   * Creates a new NotFoundError instance.
+   * @param entity The entity type that was not found
+   * @param id The ID of the entity that was not found
+   */
+  constructor(entity: string, id: string) {
+    super(`${entity} not found: ${id}`, 'NOT_FOUND', 404);
+    this.name = 'NotFoundError';
+    // Ensure proper prototype chain for instanceof checks
+    Object.setPrototypeOf(this, NotFoundError.prototype);
+  }
+}
+
+/**
+ * Creates an error response object.
+ * @param error The error to convert
+ * @returns An error response object
+ */
+export function createErrorResponse(error: unknown): { error: string; status: 'failed' } {
+  if (error instanceof AppError) {
+    return error.toJSON() as { error: string; status: 'failed' };
+  }
+  
+  return {
+    error: error instanceof Error ? error.message : String(error),
+    status: 'failed'
+  };
+}
+
+
+================================================================================
+FILE: src/utils/formatting.ts
+================================================================================
+/**
+ * Truncates a string to the specified maximum length and adds an ellipsis if truncated.
+ * @param str The string to truncate
+ * @param maxLength The maximum length of the string
+ * @returns The truncated string
+ */
+export function truncateString(str: string, maxLength: number = 100): string {
+  if (!str) return '';
+  return `${str.substring(0, maxLength)}${str.length > maxLength ? '...' : ''}`;
+}
+
+/**
+ * Formats an object as a JSON string.
+ * @param obj The object to format
+ * @returns A formatted JSON string
+ */
+export function formatAsJson(obj: any): string {
+  return JSON.stringify(obj, null, 2);
+}
+
+/**
+ * Formats an array as a bulleted list.
+ * @param items The array of items to format
+ * @param prefix The prefix to use for each item (default: '- ')
+ * @returns A formatted string with each item on a new line
+ */
+export function formatAsList(items: string[], prefix: string = '- '): string {
+  if (!items || items.length === 0) return '';
+  return items.map(item => `${prefix}${item}`).join('\n');
+}
+
+
+================================================================================
+FILE: src/utils/logger.ts
+================================================================================
+import { config } from '../config/index.js';
+
+/**
+ * Log levels for the application.
+ */
+export enum LogLevel {
+  DEBUG = 'DEBUG',
+  INFO = 'INFO',
+  WARN = 'WARN',
+  ERROR = 'ERROR'
+}
+
+/**
+ * Logger utility for consistent logging throughout the application.
+ */
+export class Logger {
+  /**
+   * Logs a debug message.
+   * @param message The message to log
+   * @param args Additional arguments to log
+   */
+  static debug(message: string, ...args: any[]): void {
+    if (config.logging.debug) {
+      this.log(LogLevel.DEBUG, message, ...args);
+    }
+  }
+
+  /**
+   * Logs an info message.
+   * @param message The message to log
+   * @param args Additional arguments to log
+   */
+  static info(message: string, ...args: any[]): void {
+    this.log(LogLevel.INFO, message, ...args);
+  }
+
+  /**
+   * Logs a warning message.
+   * @param message The message to log
+   * @param args Additional arguments to log
+   */
+  static warn(message: string, ...args: any[]): void {
+    this.log(LogLevel.WARN, message, ...args);
+  }
+
+  /**
+   * Logs an error message.
+   * @param message The message to log
+   * @param args Additional arguments to log
+   */
+  static error(message: string, ...args: any[]): void {
+    this.log(LogLevel.ERROR, message, ...args);
+  }
+
+  /**
+   * Logs a message with the specified log level.
+   * @param level The log level
+   * @param message The message to log
+   * @param args Additional arguments to log
+   */
+  private static log(level: LogLevel, message: string, ...args: any[]): void {
+    const timestamp = new Date().toISOString();
+    const prefix = `[${timestamp}] [${level}]`;
+    
+    switch (level) {
+      case LogLevel.DEBUG:
+        console.debug(`${prefix} ${message}`, ...args);
+        break;
+      case LogLevel.INFO:
+        console.info(`${prefix} ${message}`, ...args);
+        break;
+      case LogLevel.WARN:
+        console.warn(`${prefix} ${message}`, ...args);
+        break;
+      case LogLevel.ERROR:
+        console.error(`${prefix} ${message}`, ...args);
+        break;
+    }
+  }
+}
+
+
+================================================================================
+FILE: src/utils/validation.ts
+================================================================================
+import { z } from 'zod';
+
+/**
+ * Validates data against a Zod schema.
+ * @param schema The Zod schema to validate against
+ * @param data The data to validate
+ * @param errorPrefix The prefix to use for error messages
+ * @returns The validated data
+ * @throws Error if validation fails
+ */
+export function validateWithSchema<T>(
+  schema: z.ZodSchema<T>, 
+  data: unknown, 
+  errorPrefix: string = 'Validation error'
+): T {
+  try {
+    return schema.parse(data);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      throw new Error(`${errorPrefix}: ${error.errors.map(e => e.message).join(', ')}`);
+    }
+    throw new Error(`${errorPrefix}: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+
+
+================================================================================
+FILE: tests/application/processRolePrompt.test.ts
+================================================================================
+import { describe, it, expect } from 'vitest';
+
+describe('processRolePrompt', () => {
+  it('should process a role prompt successfully', () => {
+    // TODO: Implement test case for successful role prompt processing
+    expect(true).toBe(true);
+  });
+
+  it('should handle invalid role prompt input', () => {
+    // TODO: Implement test case for invalid input
+    expect(true).toBe(true);
+  });
+});
+
+
+================================================================================
+FILE: tests/domain/models.test.ts
+================================================================================
+import { describe, it, expect } from 'vitest';
+import { Role } from '../../src/domain/models/role';
+import { RoleResponse } from '../../src/domain/models/roleResponse';
+import { Scenario } from '../../src/domain/models/scenario';
+
+
+describe('Domain Models', () => {
+  describe('Role', () => {
+    it('should create a Role instance successfully', () => {
+      const role = Role.create('test-role-id', 'Test Role', 'A role for testing', ['Responsibility 1'], ['Expertise 1']);
+      expect(role).toBeInstanceOf(Role);
+      expect(role.id).toBe('test-role-id');
+      expect(role.name).toBe('Test Role');
+      expect(role.description).toBe('A role for testing');
+      expect(role.responsibilities).toEqual(['Responsibility 1']);
+      expect(role.expertise).toEqual(['Expertise 1']);
+    });
+
+    it('should throw error if Role is created with missing required fields', () => {
+      expect(() => Role.create('', 'Test Role', 'A role for testing', ['Resp'], ['Exp'])).toThrow('Role must have an id, name, and description');
+      expect(() => Role.create('id', '', 'A role for testing', ['Resp'], ['Exp'])).toThrow('Role must have an id, name, and description');
+      expect(() => Role.create('id', 'Test Role', '', ['Resp'], ['Exp'])).toThrow('Role must have an id, name, and description');
+    });
+
+    it('should throw error if Role is created with no responsibilities', () => {
+      expect(() => Role.create('id', 'Test Role', 'Desc', [], ['Exp'])).toThrow('Role must have at least one responsibility');
+      expect(() => Role.create('id', 'Test Role', 'Desc', undefined as any, ['Exp'])).toThrow('Role must have at least one responsibility');
+    });
+
+    it('should throw error if Role is created with no expertise', () => {
+      expect(() => Role.create('id', 'Test Role', 'Desc', ['Resp'], [])).toThrow('Role must have at least one area of expertise');
+      expect(() => Role.create('id', 'Test Role', 'Desc', ['Resp'], undefined as any)).toThrow('Role must have at least one area of expertise');
+    });
+
+    it('should generate a correct prompt string', () => {
+      const role = Role.create('test-role-id', 'Test Role', 'A role for testing.', ['Resp 1', 'Resp 2'], ['Exp 1', 'Exp 2']);
+      const context = 'Solve this problem';
+      const generatedPrompt = role.generatePrompt(context);
+
+      // Check that the prompt contains the expected parts
+      expect(generatedPrompt).toContain('As a senior Test Role, I will address the following: Solve this problem');
+      expect(generatedPrompt).toContain('My responsibilities include:');
+      expect(generatedPrompt).toContain('- Resp 1');
+      expect(generatedPrompt).toContain('- Resp 2');
+      expect(generatedPrompt).toContain('My areas of expertise include:');
+      expect(generatedPrompt).toContain('- Exp 1');
+      expect(generatedPrompt).toContain('- Exp 2');
+      expect(generatedPrompt).toContain('A role for testing.');
+      expect(generatedPrompt).toContain('I will provide a comprehensive response with the following structure:');
+      expect(generatedPrompt).toContain('I will now analyze the problem and provide expert guidance:');
+    });
+  });
+
+  describe('RoleResponse', () => {
+    it('should create a RoleResponse instance successfully', () => {
+      const response = RoleResponse.create('role-id', 'Role Name', 'Context', 'Analysis', ['Rec 1'], ['Step 1']);
+      expect(response).toBeInstanceOf(RoleResponse);
+      expect(response.roleId).toBe('role-id');
+      expect(response.roleName).toBe('Role Name');
+      expect(response.context).toBe('Context');
+      expect(response.analysis).toBe('Analysis');
+      expect(response.recommendations).toEqual(['Rec 1']);
+      expect(response.nextSteps).toEqual(['Step 1']);
+    });
+
+    it('should create a RoleResponse instance successfully with no next steps', () => {
+      const response = RoleResponse.create('role-id', 'Role Name', 'Context', 'Analysis', ['Rec 1']);
+      expect(response).toBeInstanceOf(RoleResponse);
+      expect(response.nextSteps).toEqual([]);
+    });
+
+
+    it('should throw error if RoleResponse is created with missing required fields', () => {
+      expect(() => RoleResponse.create('', 'Name', 'Context', 'Analysis', ['Rec'])).toThrow('RoleResponse must have a roleId, roleName, context, and analysis');
+      expect(() => RoleResponse.create('id', '', 'Context', 'Analysis', ['Rec'])).toThrow('RoleResponse must have a roleId, roleName, context, and analysis');
+      expect(() => RoleResponse.create('id', 'Name', '', 'Analysis', ['Rec'])).toThrow('RoleResponse must have a roleId, roleName, context, and analysis');
+      expect(() => RoleResponse.create('id', 'Name', 'Context', '', ['Rec'])).toThrow('RoleResponse must have a roleId, roleName, context, and analysis');
+    });
+
+    it('should throw error if RoleResponse is created with no recommendations', () => {
+      expect(() => RoleResponse.create('id', 'Name', 'Context', 'Analysis', [])).toThrow('RoleResponse must have at least one recommendation');
+      expect(() => RoleResponse.create('id', 'Name', 'Context', 'Analysis', undefined as any)).toThrow('RoleResponse must have at least one recommendation');
+    });
+
+    it('should convert RoleResponse to JSON object', () => {
+      const response = RoleResponse.create('role-id', 'Role Name', 'Context', 'Analysis', ['Rec 1', 'Rec 2'], ['Step 1']);
+      const json = response.toJSON();
+      expect(json).toEqual({
+        roleId: 'role-id',
+        roleName: 'Role Name',
+        context: 'Context',
+        analysis: 'Analysis',
+        recommendations: ['Rec 1', 'Rec 2'],
+        nextSteps: ['Step 1'],
+        codeExamples: []
+      });
+    });
+  });
+
+  describe('Scenario', () => {
+    it('should create a Scenario instance successfully', () => {
+      const scenario = Scenario.create('test-scenario-id', 'Test Scenario', 'A scenario for testing', 'testing', 'low', ['Test Role']);
+      expect(scenario).toBeInstanceOf(Scenario);
+      expect(scenario.id).toBe('test-scenario-id');
+      expect(scenario.title).toBe('Test Scenario');
+      expect(scenario.description).toBe('A scenario for testing');
+      expect(scenario.category).toBe('testing');
+      expect(scenario.complexity).toBe('low');
+      expect(scenario.suggestedRoles).toEqual(['Test Role']);
+    });
+
+    it('should throw error if Scenario is created with missing required fields', () => {
+      expect(() => Scenario.create('', 'Title', 'Desc', 'Cat', 'low', ['Role'])).toThrow('Scenario must have an id, title, description, and category');
+      expect(() => Scenario.create('id', '', 'Desc', 'Cat', 'low', ['Role'])).toThrow('Scenario must have an id, title, description, and category');
+      expect(() => Scenario.create('id', 'Title', '', 'Cat', 'low', ['Role'])).toThrow('Scenario must have an id, title, description, and category');
+      expect(() => Scenario.create('id', 'Title', 'Desc', '', 'low', ['Role'])).toThrow('Scenario must have an id, title, description, and category');
+    });
+
+    it('should throw error if Scenario is created with no suggested roles', () => {
+      expect(() => Scenario.create('id', 'Title', 'Desc', 'Cat', 'low', [])).toThrow('Scenario must have at least one suggested role');
+      expect(() => Scenario.create('id', 'Title', 'Desc', 'Cat', 'low', undefined as any)).toThrow('Scenario must have at least one suggested role');
+    });
+
+    it('should format the scenario correctly', () => {
+      const scenario = Scenario.create('test-scenario-id', 'Test Scenario', 'A scenario for testing.', 'testing', 'medium', ['Role A', 'Role B']);
+      const expectedFormat = `# Test Scenario (medium complexity)
+
+## Description
+A scenario for testing.
+
+## Category
+testing
+
+## Suggested Roles
+- Role A
+- Role B
+`;
+      expect(scenario.format()).toBe(expectedFormat);
+    });
+  });
+});
+
+
+================================================================================
+FILE: tests/domain/roleRepository.test.ts
+================================================================================
+import { describe, it, expect } from 'vitest';
+
+describe('RoleRepository', () => {
+  it('should save a role', () => {
+    // TODO: Implement test case for saving a role
+    expect(true).toBe(true);
+  });
+
+  it('should find a role by name', () => {
+    // TODO: Implement test case for finding a role
+    expect(true).toBe(true);
+  });
+});
+
+
+================================================================================
+FILE: tests/domain/roleService.test.ts
+================================================================================
+import { describe, it, expect } from 'vitest';
+
+describe('RoleService', () => {
+  it('should create a role successfully', () => {
+    // TODO: Implement test case for creating a role
+    expect(true).toBe(true);
+  });
+
+  it('should retrieve a role by name', () => {
+    // TODO: Implement test case for retrieving a role
+    expect(true).toBe(true);
+  });
+});
+
+
+================================================================================
+FILE: tests/infrastructure/rolePromptTool.test.ts
+================================================================================
+import { describe, it, expect } from 'vitest';
+
+describe('RolePromptTool', () => {
+  it('should execute the role prompt tool successfully', () => {
+    // TODO: Implement test case for successful tool execution
+    expect(true).toBe(true);
+  });
+
+  it('should handle invalid tool arguments', () => {
+    // TODO: Implement test case for invalid arguments
+    expect(true).toBe(true);
+  });
+});
+
+
+================================================================================
+FILE: tests/infrastructure/server/server.test.ts
+================================================================================
+import { describe, it, expect, vi } from 'vitest';
+import {
+  ListToolsRequestSchema,
+  CallToolRequestSchema,
+} from "@modelcontextprotocol/sdk/types.js";
+import { ROLE_PROMPT_TOOL } from '../../../src/infrastructure/tools/rolePromptTool';
+import { RolePromptFormatter } from '../../../src/presentation/formatters/rolePromptFormatter';
+import { Role } from '../../../src/domain/models/role';
+import * as rolePromptSchemas from '../../../src/infrastructure/validation/rolePromptSchemas'; // Import the module
+
+// Mock dependencies
+const mockProcessRolePromptUseCase = {
+  execute: vi.fn(),
+};
+
+const mockRoleService = {
+  getRoleByName: vi.fn(),
+};
+
+// Mock the modules that create dependencies
+vi.mock('../../../src/application/useCases/processRolePrompt', () => ({
+  ProcessRolePromptUseCase: vi.fn(() => mockProcessRolePromptUseCase),
+}));
+
+vi.mock('../../../src/domain/services/roleService', () => ({
+  RoleServiceImpl: vi.fn(() => mockRoleService),
+}));
+
+vi.mock('../../../src/infrastructure/repositories/roleRepository', () => ({
+  InMemoryRoleRepository: vi.fn(() => ({})), // Mock the repository as it's used by RoleServiceImpl
+}));
+
+// Mock the validation module and provide a mock implementation for validateRolePromptData
+vi.mock('../../../src/infrastructure/validation/rolePromptSchemas', async (importOriginal) => {
+  const actual = await importOriginal<typeof rolePromptSchemas>();
+  return {
+    ...actual,
+    validateRolePromptData: vi.fn(),
+  };
+});
+
+vi.mock('../../../src/presentation/formatters/rolePromptFormatter', () => ({
+  RolePromptFormatter: {
+    formatForConsole: vi.fn(),
+    formatOutputToJson: vi.fn(),
+  },
+}));
+
+// Define the handlers based on the logic in createServer
+const listToolsHandler = async () => ({
+  tools: [ROLE_PROMPT_TOOL],
+});
+
+const callToolHandler = async (request: any) => {
+  // Handle RolePrompt tool
+  if (request.params.name === ROLE_PROMPT_TOOL.name) {
+    try {
+      // Validate the input
+      const validatedInput = rolePromptSchemas.validateRolePromptData(request.params.arguments);
+
+      // Process the role prompt using the use case
+      const result = await mockProcessRolePromptUseCase.execute(validatedInput);
+
+      if (result.error) {
+        // Handle error case
+        console.error(`Error processing role prompt: ${result.error.error}`);
+        return {
+          content: [{
+            type: "text",
+            text: RolePromptFormatter.formatOutputToJson(result.error)
+          }],
+          isError: true
+        };
+      } else if (result.data) {
+        // Handle success case
+        // Format the role prompt for console display
+        const role = await mockRoleService.getRoleByName(validatedInput.role);
+        if (role) {
+          console.error(RolePromptFormatter.formatForConsole(role, validatedInput.context));
+        }
+
+        // Return the result as JSON
+        return {
+          content: [{
+            type: "text",
+            text: RolePromptFormatter.formatOutputToJson(result.data)
+          }]
+        };
+      }
+    } catch (error) {
+      // Handle unexpected errors
+      console.error(`Unexpected error: ${error instanceof Error ? error.message : String(error)}`);
+      return {
+        content: [{
+          type: "text",
+          text: RolePromptFormatter.formatOutputToJson({
+            error: error instanceof Error ? error.message : String(error),
+            status: 'failed'
+          })
+        }],
+        isError: true
+      };
+    }
+  }
+
+  // Handle unknown tool requests
+  return {
+    content: [{
+      type: "text",
+      text: RolePromptFormatter.formatOutputToJson({
+        error: `Unknown tool: ${request.params.name}`,
+        status: 'failed'
+      })
+    }],
+    isError: true
+  };
+};
+
+
+describe('MCP Server Handlers', () => { // Renamed describe block
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  describe('ListToolsRequestSchema Handler', () => {
+    it('should return the list of available tools', async () => {
+      const request = { params: {} };
+      const response = await listToolsHandler(); // Call the extracted handler
+
+      expect(response).toEqual({
+        tools: [ROLE_PROMPT_TOOL],
+      });
+    });
+  });
+
+  describe('CallToolRequestSchema Handler', () => {
+    it('should handle rolePrompt tool call with valid input and successful execution', async () => {
+      const validArguments = { role: 'architect', context: 'design system' };
+      const mockUseCaseResult = { data: { response: 'analysis result' } };
+      const mockFormattedJson = '{"status":"success","data":{"response":"analysis result"}}';
+      const mockRole = Role.create('id', 'architect', 'desc', ['resp'], ['exp']);
+
+      // Set up mock return values
+      (mockProcessRolePromptUseCase.execute as any).mockResolvedValue(mockUseCaseResult);
+      (RolePromptFormatter.formatOutputToJson as any).mockReturnValue(mockFormattedJson);
+      (mockRoleService.getRoleByName as any).mockResolvedValue(mockRole);
+      (RolePromptFormatter.formatForConsole as any).mockReturnValue('formatted console output');
+      (rolePromptSchemas.validateRolePromptData as any).mockReturnValue(validArguments);
+
+
+      const request = { params: { name: 'rolePrompt', arguments: validArguments } };
+      const response = await callToolHandler(request); // Call the extracted handler
+
+      expect(rolePromptSchemas.validateRolePromptData).toHaveBeenCalledWith(validArguments);
+      expect(mockProcessRolePromptUseCase.execute).toHaveBeenCalledWith(validArguments);
+      expect(mockRoleService.getRoleByName).toHaveBeenCalledWith(validArguments.role);
+      expect(RolePromptFormatter.formatForConsole).toHaveBeenCalledWith(mockRole, validArguments.context);
+      expect(RolePromptFormatter.formatOutputToJson).toHaveBeenCalledWith(mockUseCaseResult.data);
+      expect(response).toEqual({
+        content: [{
+          type: "text",
+          text: mockFormattedJson
+        }]
+      });
+      expect(response.isError).toBeUndefined();
+    });
+
+    it('should handle rolePrompt tool call with invalid input', async () => {
+      const invalidArguments = { role: 123, context: 'design system' };
+      const mockValidationError = new Error('Invalid input: role must be a string');
+      const mockFormattedErrorJson = '{"error":"Invalid input: role must be a string","status":"failed"}';
+
+      // Set up mock to throw validation error
+      (rolePromptSchemas.validateRolePromptData as any).mockImplementation(() => {
+        throw mockValidationError;
+      });
+      (RolePromptFormatter.formatOutputToJson as any).mockReturnValue(mockFormattedErrorJson);
+
+      const request = { params: { name: 'rolePrompt', arguments: invalidArguments } };
+      const response = await callToolHandler(request); // Call the extracted handler
+
+      expect(rolePromptSchemas.validateRolePromptData).toHaveBeenCalledWith(invalidArguments);
+      expect(mockProcessRolePromptUseCase.execute).not.toHaveBeenCalled();
+      expect(RolePromptFormatter.formatOutputToJson).toHaveBeenCalledWith({
+        error: mockValidationError.message,
+        status: 'failed'
+      });
+      expect(response).toEqual({
+        content: [{
+          type: "text",
+          text: mockFormattedErrorJson
+        }],
+        isError: true
+      });
+    });
+
+    it('should handle rolePrompt tool call with use case error', async () => {
+      const validArguments = { role: 'architect', context: 'design system' };
+      const mockUseCaseError = { error: { error: 'Use case failed' }, status: 'failed' };
+      const mockFormattedErrorJson = '{"error":"Use case failed","status":"failed"}';
+
+      // Set up mock to return a use case error
+      (rolePromptSchemas.validateRolePromptData as any).mockReturnValue(validArguments);
+      (mockProcessRolePromptUseCase.execute as any).mockResolvedValue({ error: mockUseCaseError });
+      (RolePromptFormatter.formatOutputToJson as any).mockReturnValue(mockFormattedErrorJson);
+
+
+      const request = { params: { name: 'rolePrompt', arguments: validArguments } };
+      const response = await callToolHandler(request); // Call the extracted handler
+
+      expect(rolePromptSchemas.validateRolePromptData).toHaveBeenCalledWith(validArguments);
+      expect(mockProcessRolePromptUseCase.execute).toHaveBeenCalledWith(validArguments);
+      expect(RolePromptFormatter.formatOutputToJson).toHaveBeenCalledWith(mockUseCaseError);
+      expect(response).toEqual({
+        content: [{
+          type: "text",
+          text: mockFormattedErrorJson
+        }],
+        isError: true
+      });
+    });
+
+    it('should handle unknown tool call', async () => {
+      vi.clearAllMocks(); // Add this line
+
+      const unknownToolArguments = { data: 'some data' };
+      const mockFormattedErrorJson = '{"error":"Unknown tool: unknownTool","status":"failed"}';
+
+      // Set up mock
+      (RolePromptFormatter.formatOutputToJson as any).mockReturnValue(mockFormattedErrorJson);
+
+      const request = { params: { name: 'unknownTool', arguments: unknownToolArguments } };
+      const response = await callToolHandler(request); // Call the extracted handler
+
+      expect(rolePromptSchemas.validateRolePromptData).not.toHaveBeenCalled();
+      expect(mockProcessRolePromptUseCase.execute).not.toHaveBeenCalled();
+      expect(RolePromptFormatter.formatOutputToJson).toHaveBeenCalledWith({
+        error: 'Unknown tool: unknownTool',
+        status: 'failed'
+      });
+      expect(response).toEqual({
+        content: [{
+          type: "text",
+          text: mockFormattedErrorJson
+        }],
+        isError: true
+      });
+    });
+  });
+});
+
+
+================================================================================
+FILE: tests/infrastructure/validation/rolePromptSchemas.test.ts
+================================================================================
+import { describe, it, expect } from 'vitest';
+import { validateRolePromptData } from '../../../src/infrastructure/validation/rolePromptSchemas.js';
+import { ValidationError } from '../../../src/utils/errors.js';
+
+describe('validateRolePromptData', () => {
+  it('should successfully validate data with required fields', () => {
+    const validData = { role: 'architect', context: 'design a system' };
+    expect(validateRolePromptData(validData)).toEqual(validData);
+  });
+
+  it('should successfully validate data with required fields and scenarioId', () => {
+    const validData = { role: 'senior-developer', context: 'implement feature', scenarioId: 'scenario1' };
+    expect(validateRolePromptData(validData)).toEqual(validData);
+  });
+
+  it('should throw error for invalid input (not an object)', () => {
+    expect(() => validateRolePromptData('invalid')).toThrow(ValidationError);
+    expect(() => validateRolePromptData('invalid')).toThrow('Invalid role prompt data');
+    expect(() => validateRolePromptData(null)).toThrow(ValidationError);
+    expect(() => validateRolePromptData(undefined)).toThrow(ValidationError);
+  });
+
+  it('should throw error for missing role', () => {
+    const invalidData = { context: 'implement feature' };
+    expect(() => validateRolePromptData(invalidData)).toThrow(ValidationError);
+    expect(() => validateRolePromptData(invalidData)).toThrow('Required');
+  });
+
+  it('should throw error for role with incorrect type', () => {
+    const invalidData = { role: 123, context: 'implement feature' };
+    expect(() => validateRolePromptData(invalidData)).toThrow(ValidationError);
+    expect(() => validateRolePromptData(invalidData)).toThrow('Expected string');
+  });
+
+  it('should throw error for missing context', () => {
+    const invalidData = { role: 'architect' };
+    expect(() => validateRolePromptData(invalidData)).toThrow(ValidationError);
+    expect(() => validateRolePromptData(invalidData)).toThrow('Required');
+  });
+
+  it('should throw error for context with incorrect type', () => {
+    const invalidData = { role: 'architect', context: 123 };
+    expect(() => validateRolePromptData(invalidData)).toThrow(ValidationError);
+    expect(() => validateRolePromptData(invalidData)).toThrow('Expected string');
+  });
+
+  it('should throw error for scenarioId with incorrect type', () => {
+    const invalidData = { role: 'architect', context: 'design', scenarioId: 123 };
+    expect(() => validateRolePromptData(invalidData)).toThrow(ValidationError);
+    expect(() => validateRolePromptData(invalidData)).toThrow('Expected string');
+  });
+
+  it('should validate scenarioId with empty string', () => {
+    // Zod allows empty strings by default, we would need to add .min(1) to prevent this
+    const data = { role: 'architect', context: 'design', scenarioId: '' };
+    expect(validateRolePromptData(data)).toEqual(data);
+  });
+});
+
+
+================================================================================
+FILE: tests/presentation/formatters/rolePromptFormatter.test.ts
+================================================================================
+import { describe, it, expect } from 'vitest';
+import { RolePromptFormatter } from '../../../src/presentation/formatters/rolePromptFormatter.js';
+import { Role } from '../../../src/domain/models/role.js';
+
+describe('RolePromptFormatter', () => {
+  describe('formatForConsole', () => {
+    it('should format role prompt response for console display', () => {
+      const mockRole = Role.create(
+        'architect-id',
+        'architect',
+        'System design expert',
+        ['Design system architecture', 'Create technical blueprints'],
+        ['Scalability', 'Security', 'Cloud Computing']
+      );
+      const context = 'Design a new microservice';
+      const expectedOutput = `
+=== Role Prompt Request ===
+Role: architect
+Context: Design a new microservice
+
+=== Role Information ===
+Description: System design expert
+Responsibilities:
+  - Design system architecture
+  - Create technical blueprints
+Expertise:
+  - Scalability
+  - Security
+  - Cloud Computing
+`;
+      expect(RolePromptFormatter.formatForConsole(mockRole, context)).toBe(expectedOutput);
+    });
+  });
+
+  describe('formatOutputToJson', () => {
+    it('should format a successful response to JSON', () => {
+      const successfulResponse = {
+        status: 'success',
+        data: {
+          response: 'This is a generated response.',
+          role: {
+            name: 'architect',
+            description: 'System design expert',
+            responsibilities: ['Design system architecture'],
+            expertise: ['Scalability'],
+          },
+        },
+      };
+      const expectedJson = JSON.stringify(successfulResponse, null, 2);
+      expect(RolePromptFormatter.formatOutputToJson(successfulResponse as any)).toBe(expectedJson);
+    });
+
+    it('should format an error response to JSON', () => {
+      const errorResponse = {
+        status: 'failed' as 'failed', // Cast to literal type
+        error: 'An error occurred.',
+      };
+      const expectedJson = JSON.stringify(errorResponse, null, 2);
+      expect(RolePromptFormatter.formatOutputToJson(errorResponse)).toBe(expectedJson);
+    });
+  });
+});
+
+
+================================================================================
+FILE: vitest.config.ts
+================================================================================
+import { defineConfig } from 'vitest/config';
+import tsconfigPaths from 'vite-tsconfig-paths';
+
+export default defineConfig({
+  plugins: [tsconfigPaths()],
+  test: {
+    globals: true,
+    include: ['tests/**/*.test.ts'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html'],
+      include: ['src/**/*.ts'],
+      exclude: ['src/**/*.d.ts', 'src/index.ts'],
+    },
+  },
+  resolve: {
+  }
+});
+
+
+================================================================================
+FILE: vitest.d.ts
+================================================================================
+/// <reference types="vitest" />
+
