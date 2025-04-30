@@ -1,7 +1,6 @@
 import { Role } from "../models/role.js";
 import { RoleResponse } from "../models/roleResponse.js";
 import { Scenario } from "../models/scenario.js";
-import { SequentialStep } from "../services/sequentialThinkingService.js";
 
 /**
  * Interface for role repository operations.
@@ -124,29 +123,4 @@ export interface IAutomaticRoleService {
   selectRoleForScenario(scenarioId: string): Promise<Role | null>;
 }
 
-/**
- * Interface for sequential thinking service operations.
- */
-export interface ISequentialThinkingService {
-  /**
-   * Creates a sequential thinking workflow based on a context.
-   * @param context The initial context or problem description
-   * @returns An array of sequential steps
-   */
-  createWorkflow(context: string): Promise<SequentialStep[]>;
 
-  /**
-   * Executes a step in a sequential thinking workflow.
-   * @param step The step to execute
-   * @param previousSteps The previous steps in the workflow
-   * @returns The updated step with output
-   */
-  executeStep(step: SequentialStep, previousSteps: SequentialStep[]): Promise<SequentialStep>;
-
-  /**
-   * Generates the next step in a sequential thinking workflow.
-   * @param steps The current steps in the workflow
-   * @returns The next step, or null if the workflow is complete
-   */
-  generateNextStep(steps: SequentialStep[]): Promise<SequentialStep | null>;
-}

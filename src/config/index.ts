@@ -48,56 +48,38 @@ export const config = {
    */
   roleKeywords: {
     'architect': [
-      'architecture', 'design', 'system', 'structure', 'scalable', 
+      'architecture', 'design', 'system', 'structure', 'scalable',
       'microservice', 'infrastructure', 'solution', 'framework', 'blueprint'
     ],
     'senior-developer': [
-      'code', 'implement', 'develop', 'programming', 'function', 
+      'code', 'implement', 'develop', 'programming', 'function',
       'class', 'method', 'algorithm', 'feature', 'library', 'api'
     ],
     'qa-engineer': [
-      'test', 'quality', 'bug', 'issue', 'verify', 'validation', 
+      'test', 'quality', 'bug', 'issue', 'verify', 'validation',
       'testing', 'qa', 'quality assurance', 'regression', 'defect'
     ],
     'devops-engineer': [
-      'deploy', 'pipeline', 'ci/cd', 'infrastructure', 'container', 
+      'deploy', 'pipeline', 'ci/cd', 'infrastructure', 'container',
       'docker', 'kubernetes', 'automation', 'devops', 'jenkins', 'terraform'
     ],
     'security-engineer': [
-      'security', 'vulnerability', 'threat', 'risk', 'compliance', 
+      'security', 'vulnerability', 'threat', 'risk', 'compliance',
       'authentication', 'authorization', 'encryption', 'firewall', 'penetration'
     ],
     'data-scientist': [
-      'data', 'analytics', 'machine learning', 'ai', 'model', 
+      'data', 'analytics', 'machine learning', 'ai', 'model',
       'prediction', 'statistics', 'dataset', 'algorithm', 'neural network', 'classification'
     ],
     'ux-designer': [
-      'user experience', 'ui', 'ux', 'interface', 'usability', 
+      'user experience', 'ui', 'ux', 'interface', 'usability',
       'wireframe', 'prototype', 'user research', 'accessibility', 'design system'
     ],
     'product-manager': [
-      'product', 'roadmap', 'feature', 'requirement', 'user story', 
+      'product', 'roadmap', 'feature', 'requirement', 'user story',
       'backlog', 'prioritization', 'market', 'customer', 'stakeholder'
     ]
   },
 
-  /**
-   * Sequential thinking configuration.
-   */
-  sequentialThinking: {
-    /**
-     * Maximum number of steps in a sequential thinking workflow.
-     */
-    maxSteps: 3,
 
-    /**
-     * Role sequence for sequential thinking.
-     */
-    roleSequence: {
-      'architect': 'senior-developer',
-      'senior-developer': 'qa-engineer',
-      'qa-engineer': 'devops-engineer',
-      'devops-engineer': 'architect'
-    }
-  }
 };
