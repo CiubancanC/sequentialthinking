@@ -4,3 +4,4 @@ dist
 crawl-files.js
 result.txt
 .env
+coverage
